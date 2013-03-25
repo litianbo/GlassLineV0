@@ -25,6 +25,14 @@ public class PopupAgent extends Agent implements Popup {
 
 	// message
 	/**
+	 * sent from sensor there is a glass waiting
+	 */
+	@Override
+	public void msgGlassIsWaiting(Sensor sensor) {
+		// TODO Auto-generated method stub
+		
+	}
+	/**
 	 * back end sensor is occupied
 	 */
 	@Override
@@ -46,15 +54,7 @@ public class PopupAgent extends Agent implements Popup {
 		stateChanged();
 	}
 
-	/**
-	 * glass is waiting in the conveyor
-	 */
-	@Override
-	public void msgGlassIsWaiting(Conveyor conveyor) {
-		// TODO Auto-generated method stub
-		// do nothing here
-	}
-
+	
 	/**
 	 * message that receive glass from the sensor or another conveyer family
 	 */
@@ -112,6 +112,7 @@ public class PopupAgent extends Agent implements Popup {
 			transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED,
 					args);
 		}
+		stateChanged();
 	}
 
 	// methods:
@@ -133,5 +134,7 @@ public class PopupAgent extends Agent implements Popup {
 	public void DoLowerPopup() {
 		cf.conveyor1.msgIAmEmpty();
 	}
+
+	
 
 }

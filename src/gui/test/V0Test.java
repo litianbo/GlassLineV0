@@ -16,8 +16,8 @@ import junit.framework.TestCase;
 
 public class V0Test extends TestCase {
 	/**
-	 * test the conveyor in the front of popup, the main goal for the front
-	 * conveyor is to pass the glass to the popup if it is empty, or wait until
+	 * test the conveyor in the front of sensor, the main goal for the front
+	 * conveyor is to pass the glass to the sensor if it is empty, or wait until
 	 * it is empty
 	 */
 	public void testConveyor1() {
@@ -29,53 +29,74 @@ public class V0Test extends TestCase {
 		ConveyorAgent conveyor = new ConveyorAgent("Conveyor1", transducer,
 				conveyorFamily1);
 		// create a popupagent for testing purpose
-		MockPopup popup = new MockPopup("Popup2", transducer, conveyorFamily1);
+
 		// create a mock sensor
-		MockSensor sensor = new MockSensor("Sensor1", transducer,
+		MockSensor sensor1 = new MockSensor("Sensor1", transducer,
 				conveyorFamily1);
-		PopupAgent popupTest = new PopupAgent("PopupTest", transducer,
+		MockSensor sensor2 = new MockSensor("Sensor2", transducer,
 				conveyorFamily1);
+		
 		// replace the agents with the mocks for the testing
-		conveyorFamily1.setPopup(popup);
-		conveyorFamily1.setSensor1(sensor);
-		// This will check that you're not messaging the customer in the
-		// waiter's message reception.
+		conveyorFamily1.setSensor1(sensor1);
+		conveyorFamily1.setSensor2(sensor2);
+		// neither sensor1 or sensor2 should have message right now, so use
+		// 'equal' to check it
 		assertEquals(
-				"Mock popup should have an empty event log now. Instead, the mock popup's event log reads: "
-						+ popup.log.toString(), 0, popup.log.size());
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
 		// now, give the conveyor the right state in order to test,
 		conveyor.msgHereIsGlass(new Glass(new Recipe(), "glass1"));
-		// This will check that you're not messaging the customer in the
-		// waiter's message reception.
+		// now, neither sensor1 or sensor2 should still have message right now,
+		// so, use 'equal' to check it
 		assertEquals(
-				"Mock popup should have an empty event log now. Instead, the mock popup's event log reads: "
-						+ popup.log.toString(), 0, popup.log.size());
-		// after I run the scheduler, popup will receive the msg:
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		
+		// after I run the scheduler, sensor2 will receive the msg:
 		// msgHereIsGlass;
 		conveyor.pickAndExecuteAnAction();
 		assertTrue(
-				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
-						+ popup.log.toString(),
-				popup.log.containsString("Popup received glass"));
-		// now we want to prove that when the popup is currently working, the
-		// conveyor stop giving the glass to the popup
+				"Mock sensor2 should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor2.log.toString(),
+				sensor2.log.containsString("Sensor2 received glass"));
+		// now we want to prove that when the sensor is currently working, the
+		// conveyor stop giving the glass to the sensor
 
-		// suppose the popup sent a msgIAmOccupied to conveyor (Test the working
-		// of popup later, now, just assume the popup work and test conveyor)
+		// suppose the sensor sent a msgIAmOccupied to conveyor (Test the working
+		// of sensor later, now, just assume the sensor work and test conveyor)
 		conveyor.msgIAmOccupied();
 		// give a new glass named glass2
 		conveyor.msgHereIsGlass(new Glass(new Recipe(), "glass2"));
 		// I need to make the state of conveyor to WAITING_FOR_POP by calling
 		// the scheudler
 		conveyor.pickAndExecuteAnAction();
-		// call it again to send the msgGlassIsWaiting to the popup
+		// call it again to send the msgGlassIsWaiting to the sensor
 		conveyor.pickAndExecuteAnAction();
-		// now the mockpopup received the msgGlassIsWaiting, let's test it!!!
+		// now the mocksensor received the msgGlassIsWaiting, let's test it!!!
 		assertTrue(
-				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
-						+ popup.log.toString(),
-				popup.log
-						.containsString("Popup received message from conveyor that there is glass waiting on the conveoyor "));
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor2.log.toString(),
+				sensor2.log
+						.containsString("I know that there is "));
+		//Test for interaction with front end sensor
+		//if conveyor has more than three glass?, does front end sensor stop sending glass?
+		conveyor.msgHereIsGlass(new Glass(new Recipe(), "glass3"));
+		conveyor.msgHereIsGlass(new Glass(new Recipe(), "glass4"));
+		//now, run scheduler to see what happoen?
+		conveyor.pickAndExecuteAnAction();
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor1.log.toString(),
+				sensor1.log
+						.containsString("I know that I should stop sending glass"));
+		
+		
 		// sensor.eventFired(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED, args);
 		// popup.eventFired(TChannel.POPUP, TEvent.POPUP_GUI_RELEASE_FINISHED,
 		// args);

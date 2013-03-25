@@ -7,17 +7,18 @@ import transducer.TChannel;
 import transducer.TEvent;
 import transducer.Transducer;
 import interfaces.Conveyor;
+import interfaces.Sensor;
 
 public class ConveyorAgent extends Agent implements Conveyor {
 	private enum ConveyorState {
-		GLASS_ARRIVED, WAIT_FOR_POPUP,SENDING_GLASS_TO_POPUP, SENDING_GLASS_TO_END_SENSOR, NULL
+		GLASS_ARRIVED, WAITING_FOR_SENSOR,SENDING_GLASS_TO_SENSOR, NULL
 	}
 
 	List<Glass> glasses = Collections.synchronizedList(new ArrayList<Glass>());
 	List<Glass> waitingGlasses = Collections.synchronizedList(new ArrayList<Glass>());
 	ConveyorState state = ConveyorState.NULL;
 	ConveyorFamily cf;
-	boolean popupOccupied =false;
+	boolean sensorOccupied =false;
 	/**
 	 * constructor for conveyor agent
 	 * @param name
@@ -37,53 +38,54 @@ public class ConveyorAgent extends Agent implements Conveyor {
 		// TODO Auto-generated method stub
 		glasses.add(glass);
 		state = ConveyorState.GLASS_ARRIVED;
+		stateChanged();
 	}
 
-	@Override
-	public void msgCanITakeThisGlass(Glass glass) {
-		// TODO Auto-generated method stub
-
-	}
+	
 	/**
-	 * sent from the popup that it is working on a glass;
+	 * sent from the sensor that it is working on a glass;
 	 */
 	@Override
 	public void msgIAmOccupied(){
-		popupOccupied = true;
+		sensorOccupied = true;
+		stateChanged();
 	}
 	/**
-	 * sent from the popup that it is free;
+	 * sent from the sensor that it is free;
 	 */
 	@Override
 	public void msgIAmEmpty(){
-		popupOccupied = false;
+		sensorOccupied = false;
+		stateChanged();
 	}
 	@Override
 	public boolean pickAndExecuteAnAction() {
 		// TODO Auto-generated method stub
 		if(glasses.size()>=2){
 			print("Too many glasses at this conveyor!!!, stop " + this);
+			//tell front end sensor stop sending glass
+			cf.sensor1.msgStopSendingGlassToConveyor();
 			stopConveyor();
 			return true;
 		}
-		//only if the popup is not occupied;
-		if(state == ConveyorState.GLASS_ARRIVED && !popupOccupied || name =="Conveyor2"){
-			print("glass " + glasses.get(0).getName()+ " arrived to conveyor " + this + " it will be passing to popup now");
+		//only if the sensor is not occupied;
+		if(state == ConveyorState.GLASS_ARRIVED && !sensorOccupied || name =="Conveyor2"){
+			print("glass " + glasses.get(0).getName()+ " arrived to conveyor " + this + " it will be passing to sensor now");
 			//add more implementation here further
 			glassArrived(glasses.remove(0));
 			return true;
 		}
-		if(state == ConveyorState.GLASS_ARRIVED && popupOccupied){
+		if(state == ConveyorState.GLASS_ARRIVED && sensorOccupied){
 			//ToDo: enhance the throughput here
-			state = ConveyorState.WAIT_FOR_POPUP;
+			state = ConveyorState.WAITING_FOR_SENSOR;
 			return true;
 		}
-		if(state == ConveyorState.WAIT_FOR_POPUP && waitingGlasses.size()==0){
-			notifyPopupGlassIsWaiting();
+		if(state == ConveyorState.WAITING_FOR_SENSOR && waitingGlasses.size()==0){
+			notifySensorGlassIsWaiting();
 			return true;
 		}
-		if(state == ConveyorState.WAIT_FOR_POPUP && waitingGlasses.size()>0 && !popupOccupied){
-			pushGlassToPopup(waitingGlasses.remove(0));
+		if(state == ConveyorState.WAITING_FOR_SENSOR && waitingGlasses.size()>0 && !sensorOccupied){
+			pushGlassToSensor(waitingGlasses.remove(0));
 			return true;
 		}
 		return false;
@@ -96,30 +98,38 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	}
 	
 	//methods:
-	public void pushGlassToPopup(Glass glass){
-		cf.popup.msgHereIsGlass(this, glass);
+	public void pushGlassToSensor(Glass glass){
+		cf.sensor2.msgHereIsGlass(this, glass);
+		stateChanged();
 	}
 	/**
-	 * notify msg to popup and put the glass to waiting list
+	 * notify msg to sensor and put the glass to waiting list
 	 */
-	public void notifyPopupGlassIsWaiting(){
-		print("glass " + glasses.get(0).getName() +  "is waiting in the conveyor " + this);
-		cf.popup.msgGlassIsWaiting(this);
+	public void notifySensorGlassIsWaiting(){
+		print("glass " + glasses.get(0).getName() +  " is waiting on the conveyor " + this);
+		cf.sensor2.msgGlassIsWaiting(this);
 		waitingGlasses.add(glasses.remove(0));
+		stateChanged();
 	}
 	public void stopConveyor(){
 		
 	}
 	public void glassArrived(Glass glass){
-		//if this is front end conveyor, pass the glass to the popup if possible
+		//if this is front end conveyor, pass the glass to the sensor if possible
 		if(name =="Conveyor1"){
-			cf.popup.msgHereIsGlass(this, glass);
-		}
-		else if(name == "Conveyor2"){
 			cf.sensor2.msgHereIsGlass(this, glass);
 		}
+		else if(name == "Conveyor2"){//do nothing now.
+			cf.sensor2.msgHereIsGlass(this, glass);
+		}
+		stateChanged();
 	}
 	public String getName(){
 		return name;
+	}
+	@Override
+	public void msgGlassIsWaiting(Sensor sensor) {
+		// TODO Auto-generated method stub
+		
 	}
 }

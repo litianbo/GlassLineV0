@@ -26,7 +26,19 @@ public class MockSensor implements Sensor, TReceiver {
 		t.register(this, TChannel.SENSOR);
 		this.cf = cf;
 	}
+	@Override
+	public void msgStopSendingGlassToConveyor() {
+		// TODO Auto-generated method stub
+		log.add(new LoggedEvent("I know that I should stop sending glass "
+				));
+	}
 
+	@Override
+	public void msgGlassIsWaiting(Conveyor conveyor) {
+		// TODO Auto-generated method stub
+		log.add(new LoggedEvent("I know that there is glass waiting on the conveyor "
+				+ " from agent " + conveyor));
+	}
 	@Override
 	public void msgCanISendGlass() {
 		// TODO Auto-generated method stub
@@ -36,20 +48,15 @@ public class MockSensor implements Sensor, TReceiver {
 	@Override
 	public void msgHereIsGlass(Conveyor conveyor, Glass glass) {
 		// TODO Auto-generated method stub
-
+		log.add(new LoggedEvent("Sensor2 received glass " + glass.getName()
+				+ " from agent " + conveyor));
 	}
 
 	@Override
 	public void msgIReceivedGlass(Conveyor conveyor, Glass glass) {
 		// TODO Auto-generated method stub
-		log.add(new LoggedEvent("Sensor received glass " + glass.getName()
+		log.add(new LoggedEvent("msgIReceivedGlass, Sensor2 received glass " + glass.getName()
 				+ " from agent " + conveyor));
-	}
-
-	@Override
-	public void msgGlassPassed(Glass glass) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -68,5 +75,7 @@ public class MockSensor implements Sensor, TReceiver {
 		// TODO Auto-generated method stub
 		return name;
 	}
+	
+	
 
 }

@@ -11,7 +11,12 @@ public interface Popup {
 	 * @param glass the glass that pass to popup agent
 	 */
 	public abstract void msgHereIsGlass(Conveyor conveyor, Glass glass);
-	public abstract void msgGlassIsWaiting(Conveyor conveyor);
+	/**
+	 * glass is waiting on the sensor
+	 * @param sensor
+	 */
+	public abstract void msgGlassIsWaiting(Sensor sensor);
+	
 	public abstract void setName(String name);
 	/**
 	 * sent from sensor, as a response to popup's msgCanISendGlass

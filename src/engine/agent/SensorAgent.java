@@ -35,6 +35,24 @@ public class SensorAgent extends Agent implements Sensor {
 
 	// messages
 	/**
+	 * sent from conveyor 
+	 */
+	@Override
+	public void msgStopSendingGlassToConveyor() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	/**
+	 * glass is waiting on the conveyor
+	 */
+	public void msgGlassIsWaiting(Conveyor conveyor) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	/**
 	 * sent from popup, needs to clear the sensor ASAP!
 	 */
 	@Override
@@ -56,16 +74,23 @@ public class SensorAgent extends Agent implements Sensor {
 
 	}
 
-	@Override
-	public void msgGlassPassed(Glass glass) {
-		// TODO Auto-generated method stub
-
-	}
-
 	// schduler:
 	@Override
 	public boolean pickAndExecuteAnAction() {
 		// TODO Auto-generated method stub
+		if (state == SensorState.OCCUPIED) {
+			// notify the conveyor/popup that I am occupied. can I send a glass?
+			if (name == "Sensor2") {
+				// sensor2 is the back end sensor which connect to the
+				// workstation/popup directly, then notify popups
+				cf.popup.msgGlassIsWaiting(this);
+			} else if (name == "Sensor1") {// if it is sensor1, which send glass
+											// to conveyor directly, then notify
+											// conveyor
+				cf.conveyor1.msgGlassIsWaiting(this);
+
+			}
+		}
 		return false;
 	}
 
@@ -94,7 +119,7 @@ public class SensorAgent extends Agent implements Sensor {
 				// fire which event to notify next conveyor family?
 				transducer.fireEvent(TChannel.CONVEYOR,
 						TEvent.CONVEYOR_DO_START, args);
-			//for whatever sensor it is, change the state to empty
+			// for whatever sensor it is, change the state to empty
 			state = SensorState.EMPTY;
 		}
 
@@ -103,5 +128,8 @@ public class SensorAgent extends Agent implements Sensor {
 	public String getName() {
 		return name;
 	}
+
+
+	
 
 }

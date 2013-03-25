@@ -8,6 +8,7 @@ import transducer.TReceiver;
 import transducer.Transducer;
 import interfaces.Conveyor;
 import interfaces.Popup;
+import interfaces.Sensor;
 
 public class MockPopup implements Popup, TReceiver {
 	Transducer t;
@@ -32,11 +33,11 @@ public class MockPopup implements Popup, TReceiver {
 	}
 
 	@Override
-	public void msgGlassIsWaiting(Conveyor conveyor) {
+	public void msgGlassIsWaiting(Sensor sensor) {
 		// TODO Auto-generated method stub
 		log.add(new LoggedEvent(
-				"Popup received message from conveyor that there is glass waiting on the conveoyor  "
-						+ " from agent " + conveyor));
+				"Popup received message from sensor that there is glass waiting on the conveoyor  "
+						+ " from agent " + sensor));
 	}
 
 	@Override

@@ -33,4 +33,7 @@ public class ConveyorFamily {
 	public void setSensor1(Sensor sensor1){
 		this.sensor1 = sensor1;
 	}
+	public void setSensor2(Sensor sensor2){
+		this.sensor2 = sensor2;
+	}
 }
