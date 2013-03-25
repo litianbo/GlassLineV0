@@ -18,7 +18,8 @@ public class MockSensor implements Sensor, TReceiver {
 	ConveyorFamily cf;
 	String name;
 	public EventLog log = new EventLog();
-	public MockSensor(String name, Transducer t,ConveyorFamily cf) {
+
+	public MockSensor(String name, Transducer t, ConveyorFamily cf) {
 		this.name = name;
 		// TODO Auto-generated constructor stub
 		this.t = t;
@@ -26,19 +27,23 @@ public class MockSensor implements Sensor, TReceiver {
 		this.cf = cf;
 	}
 
-	
+	@Override
+	public void msgCanISendGlass() {
+		// TODO Auto-generated method stub
+
+	}
 
 	@Override
-	public void msgHereIsGlass(Conveyor conveyor,Glass glass) {
+	public void msgHereIsGlass(Conveyor conveyor, Glass glass) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void msgIReceivedGlass(Conveyor conveyor, Glass glass) {
 		// TODO Auto-generated method stub
-		log.add(new LoggedEvent("Sensor received glass "
-				+ glass.getName() + " from agent " + conveyor));
+		log.add(new LoggedEvent("Sensor received glass " + glass.getName()
+				+ " from agent " + conveyor));
 	}
 
 	@Override
@@ -50,10 +55,11 @@ public class MockSensor implements Sensor, TReceiver {
 	@Override
 	public void eventFired(TChannel channel, TEvent event, Object[] args) {
 		// TODO Auto-generated method stub
-		
-		if(event == TEvent.SENSOR_GUI_PRESSED){
-		log.add(new LoggedEvent("Sensor received event " + event
-				+ " from channel " + channel + " with arguement: " + args[0]));
+
+		if (event == TEvent.SENSOR_GUI_PRESSED) {
+			log.add(new LoggedEvent("Sensor received event " + event
+					+ " from channel " + channel + " with arguement: "
+					+ args[0]));
 		}
 	}
 
@@ -62,4 +68,5 @@ public class MockSensor implements Sensor, TReceiver {
 		// TODO Auto-generated method stub
 		return name;
 	}
+
 }

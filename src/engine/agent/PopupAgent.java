@@ -15,7 +15,7 @@ public class PopupAgent extends Agent implements Popup {
 			.synchronizedList(new ArrayList<Object>());
 	String name;
 	boolean raise = false;
-
+	boolean sensorOccupied = false;
 	public PopupAgent(String name, Transducer t, ConveyorFamily cf) {
 		super(name, t);
 		this.cf = cf;
@@ -25,13 +25,36 @@ public class PopupAgent extends Agent implements Popup {
 
 	// message
 	/**
+	 * back end sensor is occupied
+	 */
+	@Override
+	public void msgIAmOccupied() {
+		// TODO Auto-generated method stub
+		print("back end sensor is occupied, don't pass glass");
+		sensorOccupied = true;
+		stateChanged();
+	}
+
+	/**
+	 * back end sensor is empty, glass can pass
+	 */
+	@Override
+	public void msgIAmEmpty() {
+		// TODO Auto-generated method stub
+		print("back end sensor is occupied, pass glass");
+		sensorOccupied = false;
+		stateChanged();
+	}
+
+	/**
 	 * glass is waiting in the conveyor
 	 */
 	@Override
 	public void msgGlassIsWaiting(Conveyor conveyor) {
 		// TODO Auto-generated method stub
-		//do nothing here
+		// do nothing here
 	}
+
 	/**
 	 * message that receive glass from the sensor or another conveyer family
 	 */
@@ -42,6 +65,7 @@ public class PopupAgent extends Agent implements Popup {
 		print("received message from " + conveyor + " to work on "
 				+ glass.getName());
 		raise = true;
+		stateChanged();
 	}
 
 	// scheduler:
@@ -110,5 +134,4 @@ public class PopupAgent extends Agent implements Popup {
 		cf.conveyor1.msgIAmEmpty();
 	}
 
-	
 }

@@ -20,7 +20,10 @@ public interface Sensor {
 	 * @param glass
 	 */
 	public abstract void msgGlassPassed(Glass glass);
-	
+	/**
+	 * sent from popup he wants to send a glass to sensor
+	 */
+	public abstract void msgCanISendGlass();
 	public abstract String getName();
 	/**
 	 * fire an event 

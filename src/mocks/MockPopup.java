@@ -40,6 +40,18 @@ public class MockPopup implements Popup, TReceiver {
 	}
 
 	@Override
+	public void msgIAmOccupied() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void msgIAmEmpty() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
 	public void setName(String name) {
 		// TODO Auto-generated method stub
 

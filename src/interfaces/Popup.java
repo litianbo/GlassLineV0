@@ -14,6 +14,14 @@ public interface Popup {
 	public abstract void msgGlassIsWaiting(Conveyor conveyor);
 	public abstract void setName(String name);
 	/**
+	 * sent from sensor, as a response to popup's msgCanISendGlass
+	 */
+	public abstract void msgIAmOccupied();
+	/**
+	 * sent from sensor, as a response to popup's msgCanISendGlass
+	 */
+	public abstract void msgIAmEmpty();
+	/**
 	 * return the name of this popup
 	 * @return
 	 */
