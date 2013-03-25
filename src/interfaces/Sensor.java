@@ -6,6 +6,10 @@ import engine.agent.Glass;
 
 public interface Sensor {
 	/**
+	 * sent from popup
+	 */
+	public abstract void msgIAmOccupied();
+	/**
 	 * if conveyor has more than 3 glasses which is more than its capacity,
 	 * sensor should stop sending glass to it
 	 */
@@ -19,12 +23,18 @@ public interface Sensor {
 	public abstract void msgGlassIsWaiting(Conveyor conveyor);
 
 	/**
-	 * pass glass to the sensor
+	 * pass glass to the sensor, sent from conveyor
 	 * 
 	 * @param glass
 	 */
 	public abstract void msgHereIsGlass(Conveyor conveyor, Glass glass);
-
+	/**
+	 * pass glass to the sensor, sent from popup
+	 * @param popup
+	 * @param glass
+	 */
+	public abstract void msgHereIsGlass(Popup popup,Glass glass);
+	
 	/**
 	 * print on the console that the sensor is currently holding a glass
 	 * 

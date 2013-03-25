@@ -11,14 +11,14 @@ import interfaces.Sensor;
 
 public class SensorAgent extends Agent implements Sensor {
 	// Data:
-	ConveyorFamily cf;
+	ConveyorFamily cf, pcf;
 	SensorState state;
 	List<Object> args = Collections.synchronizedList(new ArrayList<Object>());
 	private List<Glass> glasses = Collections
 			.synchronizedList(new ArrayList<Glass>());
 
 	private enum SensorState {
-		NULL, EMPTY, OCCUPIED
+		NULL, EMPTY, OCCUPIED, WAITING_FOR_CLEAR, WAITING_FOR_POPUP_SENDING_GLASS, OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED, OCCUPIED_AND_SO_DOES_POPUP, EMPTY_BUT_POPUP_IS_NOT_EMPTY, EMPTY_AND_SO_DOES_POPUP
 	}
 
 	/**
@@ -33,14 +33,51 @@ public class SensorAgent extends Agent implements Sensor {
 		state = SensorState.EMPTY;
 	}
 
+	/**
+	 * 2nd constructor for sensor
+	 * 
+	 * @param name
+	 */
+	public SensorAgent(String name, Transducer t, ConveyorFamily cf,
+			ConveyorFamily pcf) {
+		super(name, t);
+		transducer.register(this, TChannel.ALL_AGENTS);
+		this.cf = cf;
+		this.pcf = pcf;
+		state = SensorState.EMPTY;
+	}
+
 	// messages
 	/**
-	 * sent from conveyor 
+	 * sent from popup to next family
+	 */
+	@Override
+	public void msgHereIsGlass(Popup popup, Glass glass) {
+		// TODO Auto-generated method stub
+		glasses.add(glass);
+		state = SensorState.OCCUPIED;
+		stateChanged();
+	}
+	/**
+	 * popup is occupied
+	 */
+	@Override
+	public void msgIAmOccupied() {
+		if (state == SensorState.EMPTY) {
+			state = SensorState.EMPTY_BUT_POPUP_IS_NOT_EMPTY;
+		} else if (state == SensorState.OCCUPIED) {
+			state = SensorState.OCCUPIED_AND_SO_DOES_POPUP;
+		}
+		stateChanged();
+	}
+
+	/**
+	 * sent from conveyor
 	 */
 	@Override
 	public void msgStopSendingGlassToConveyor() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -49,22 +86,30 @@ public class SensorAgent extends Agent implements Sensor {
 	 */
 	public void msgGlassIsWaiting(Conveyor conveyor) {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	/**
 	 * sent from popup, needs to clear the sensor ASAP!
 	 */
 	@Override
 	public void msgCanISendGlass() {
 		// TODO Auto-generated method stub
+		if (state == SensorState.EMPTY) {// if sensor is cleared
+			state = SensorState.WAITING_FOR_POPUP_SENDING_GLASS;
+		} else if (state == SensorState.OCCUPIED) {// if sensor is occupied due
+			state = SensorState.WAITING_FOR_CLEAR; // to too many glasses on
+			// conveyor
 
+		}
+		stateChanged();
 	}
 
 	@Override
 	public void msgHereIsGlass(Conveyor conveyor, Glass glass) {
 		// here, sensor suppose to know every glass passed to it.
 		glasses.add(glass);
+		state = SensorState.OCCUPIED;
 		stateChanged();
 	}
 
@@ -90,6 +135,16 @@ public class SensorAgent extends Agent implements Sensor {
 				cf.conveyor1.msgGlassIsWaiting(this);
 
 			}
+			return true;
+		}
+		if (state == SensorState.WAITING_FOR_CLEAR) {
+			// tell popup to wait
+			notifyPopupToWait();
+			return true;
+		}
+		if(state == SensorState.WAITING_FOR_POPUP_SENDING_GLASS){
+			notifyPopupToSend();
+			return true;
 		}
 		return false;
 	}
@@ -125,10 +180,26 @@ public class SensorAgent extends Agent implements Sensor {
 
 	}
 
+	// methods:
+	public void notifyPopupToSend() {
+		if (pcf != null)
+			pcf.popup.msgIAmEmpty();
+		else
+			print("previous conveyor family is null, check it out!!!");
+		stateChanged();
+	}
+
+	public void notifyPopupToWait() {
+		if (pcf != null)
+			pcf.popup.msgIAmOccupied();
+		else
+			print("previous conveyor family is null, check it out!!!");
+		stateChanged();
+	}
+
 	public String getName() {
 		return name;
 	}
-
 
 	
 

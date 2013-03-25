@@ -26,10 +26,10 @@ public class MockPopup implements Popup, TReceiver {
 	}
 
 	@Override
-	public void msgHereIsGlass(Conveyor conveyor, Glass glass) {
+	public void msgHereIsGlass(Sensor sensor, Glass glass) {
 		// TODO Auto-generated method stub
 		log.add(new LoggedEvent("Popup received glass " + glass.getName()
-				+ " from agent " + conveyor));
+				+ " from agent " + sensor));
 	}
 
 	@Override

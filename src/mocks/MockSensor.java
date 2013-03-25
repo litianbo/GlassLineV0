@@ -15,7 +15,7 @@ import interfaces.Sensor;
 
 public class MockSensor implements Sensor, TReceiver {
 	Transducer t;
-	ConveyorFamily cf;
+	ConveyorFamily cf, pcf;
 	String name;
 	public EventLog log = new EventLog();
 
@@ -26,43 +26,64 @@ public class MockSensor implements Sensor, TReceiver {
 		t.register(this, TChannel.SENSOR);
 		this.cf = cf;
 	}
+
+	public MockSensor(String name, Transducer t, ConveyorFamily cf,
+			ConveyorFamily pcf) {
+		this.name = name;
+		this.t = t;
+		t.register(this, TChannel.SENSOR);
+		this.cf = cf;
+		this.pcf = pcf;
+	}
+
+	@Override
+	public void msgHereIsGlass(Popup popup, Glass glass) {
+		log.add(new LoggedEvent("I know that there is glass incoming "));
+	}
+
+	@Override
+	public void msgIAmOccupied() {
+
+		log.add(new LoggedEvent("I know that popup is occupied "));
+	}
+
 	@Override
 	public void msgStopSendingGlassToConveyor() {
-		// TODO Auto-generated method stub
-		log.add(new LoggedEvent("I know that I should stop sending glass "
-				));
+
+		log.add(new LoggedEvent("I know that I should stop sending glass "));
 	}
 
 	@Override
 	public void msgGlassIsWaiting(Conveyor conveyor) {
-		// TODO Auto-generated method stub
-		log.add(new LoggedEvent("I know that there is glass waiting on the conveyor "
-				+ " from agent " + conveyor));
+
+		log.add(new LoggedEvent(
+				"I know that there is glass waiting on the conveyor "
+						+ " from agent " + conveyor));
 	}
+
 	@Override
 	public void msgCanISendGlass() {
-		// TODO Auto-generated method stub
 
+		log.add(new LoggedEvent(
+				"I know that the popup from previous conveyor family are going to send glass "));
 	}
 
 	@Override
 	public void msgHereIsGlass(Conveyor conveyor, Glass glass) {
-		// TODO Auto-generated method stub
+
 		log.add(new LoggedEvent("Sensor2 received glass " + glass.getName()
 				+ " from agent " + conveyor));
 	}
 
 	@Override
 	public void msgIReceivedGlass(Conveyor conveyor, Glass glass) {
-		// TODO Auto-generated method stub
-		log.add(new LoggedEvent("msgIReceivedGlass, Sensor2 received glass " + glass.getName()
-				+ " from agent " + conveyor));
+
+		log.add(new LoggedEvent("msgIReceivedGlass, Sensor2 received glass "
+				+ glass.getName() + " from agent " + conveyor));
 	}
 
 	@Override
 	public void eventFired(TChannel channel, TEvent event, Object[] args) {
-		// TODO Auto-generated method stub
-
 		if (event == TEvent.SENSOR_GUI_PRESSED) {
 			log.add(new LoggedEvent("Sensor received event " + event
 					+ " from channel " + channel + " with arguement: "
@@ -75,7 +96,5 @@ public class MockSensor implements Sensor, TReceiver {
 		// TODO Auto-generated method stub
 		return name;
 	}
-	
-	
 
 }

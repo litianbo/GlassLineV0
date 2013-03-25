@@ -10,7 +10,7 @@ public interface Popup {
 	 * 
 	 * @param glass the glass that pass to popup agent
 	 */
-	public abstract void msgHereIsGlass(Conveyor conveyor, Glass glass);
+	public abstract void msgHereIsGlass(Sensor sensor, Glass glass);
 	/**
 	 * glass is waiting on the sensor
 	 * @param sensor
