@@ -23,5 +23,6 @@ To Do:
 ===========
 
 Test for Sensor (This one is hard)
+Test for three glasses passing to conveyor family (should easy according to what I have done before)
 ===========
 
