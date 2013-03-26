@@ -6,25 +6,37 @@ import engine.util.ConveyorFamily;
 import interfaces.Conveyor;
 import interfaces.Popup;
 import interfaces.Sensor;
+import interfaces.WorkStation;
 import transducer.*;
 
 public class PopupAgent extends Agent implements Popup {
 	// Data:
 	ConveyorFamily cf, cf2;
+	// top and bottom workstation
+	WorkStation top, bot;
 	List<Glass> glasses = Collections.synchronizedList(new ArrayList<Glass>());
+	List<Glass> waitingGlasses = Collections
+			.synchronizedList(new ArrayList<Glass>());
+	List<Glass> doneGlasses = Collections
+			.synchronizedList(new ArrayList<Glass>());
 	String name;
 	boolean raise = false;
 	boolean sensorOccupied = false;
-	PopupState state = PopupState.NULL;
+	PopupState popupState = PopupState.NULL;
+	WorkStationState wState = WorkStationState.EMPTY;
 
 	enum PopupState {
-		NULL, WORKING_ON_GLASS, GLASS_ARRIVED, SENDING_GLASS_TO_SENSOR, WAITING_EMPTY, WAITING_OCCUPIED
+		NULL, WORKING_ON_GLASS, RAISED, GLASS_ARRIVED, SENDING_GLASS_TO_SENSOR, SENSOR_EMPTY, SENSOR_OCCUPIED
+	}
+
+	enum WorkStationState {
+		NULL, TOP_WORKSTATION_OCCUPIED, BOTH_WORKSTATION_OCCUPIED, BOT_WORKSTATION_OCCUPIED, EMPTY
 	}
 
 	public PopupAgent(String name, Transducer t, ConveyorFamily cf) {
 		super(name, t);
 		this.cf = cf;
-		// transducer.register(this, TChannel.ALL_AGENTS);
+		// transducer.register(this, TChannel.);
 		transducer.register(this, TChannel.POPUP);
 
 	}
@@ -49,7 +61,47 @@ public class PopupAgent extends Agent implements Popup {
 		transducer.register(this, TChannel.POPUP);
 	}
 
+	/**
+	 * 3rd consturctor for the workstation
+	 * 
+	 * @param name
+	 * @param t
+	 * @param cf1
+	 * @param cf2
+	 * @param top
+	 * @param bot
+	 */
+	public PopupAgent(String name, Transducer t, ConveyorFamily cf1,
+			ConveyorFamily cf2, WorkStation top, WorkStation bot) {
+		super(name, t);
+		this.cf = cf1;
+		this.cf2 = cf2;
+		transducer.register(this, TChannel.POPUP);
+		this.top = top;
+		this.bot = bot;
+	}
+
 	// message
+	/**
+	 * sent from workstation, glass is done
+	 */
+	@Override
+	public void msgGlassDone(Glass glass) {
+		doneGlasses.add(glass);
+		stateChanged();
+
+	}
+
+	/**
+	 * before sensor pass glass to popup, he needs to check with popup if there
+	 * is space for it
+	 */
+	public void msgCanISendGlass(Glass glass) {
+		waitingGlasses.add(glass);
+		// checkStationState();
+		stateChanged();
+	}
+
 	/**
 	 * sent from sensor there is a glass waiting
 	 */
@@ -67,7 +119,8 @@ public class PopupAgent extends Agent implements Popup {
 		// TODO Auto-generated method stub
 		print("front end sensor is occupied, don't pass glass");
 		sensorOccupied = true;
-		state = PopupState.WAITING_OCCUPIED;
+		popupState = PopupState.SENSOR_OCCUPIED;
+
 		stateChanged();
 	}
 
@@ -79,7 +132,7 @@ public class PopupAgent extends Agent implements Popup {
 		// TODO Auto-generated method stub
 		print("next conveyor family is empty, pass glass");
 		sensorOccupied = false;
-		state = PopupState.WAITING_EMPTY;
+		popupState = PopupState.SENSOR_EMPTY;
 		stateChanged();
 	}
 
@@ -92,7 +145,7 @@ public class PopupAgent extends Agent implements Popup {
 		glasses.add(glass);
 		print("received message from " + sensor.getName() + " to work on "
 				+ glass.getName());
-		state = PopupState.GLASS_ARRIVED;
+		popupState = PopupState.GLASS_ARRIVED;
 		stateChanged();
 	}
 
@@ -100,29 +153,53 @@ public class PopupAgent extends Agent implements Popup {
 	@Override
 	public boolean pickAndExecuteAnAction() {
 		// TODO Auto-generated method stub
-		if (state == PopupState.GLASS_ARRIVED) {
+
+		if (popupState == PopupState.GLASS_ARRIVED) {
 			glassArrived();
 			return true;
 		}
-		if (state == PopupState.WORKING_ON_GLASS && raise && glasses.size() > 0) {
+		if (popupState == PopupState.WORKING_ON_GLASS && raise
+				&& glasses.size() > 0) {
 
 			DoRaisePopup();
 			return true;
 		}
 
-		if (state == PopupState.SENDING_GLASS_TO_SENSOR) {// sent by GUI popup
+		if (popupState == PopupState.SENDING_GLASS_TO_SENSOR) {// sent by GUI
+																// popup
 			notifyNextFamily();
 			return true;
 		}
-		if(state == PopupState.WAITING_EMPTY){
-			//next conveyor family is empty in first sensor
+		if (popupState == PopupState.SENSOR_EMPTY) {
+			// next conveyor family is empty in first sensor
 			passGlassToNextFamily();
 			return true;
 		}
-		if(state == PopupState.WAITING_OCCUPIED){
-			//TODO: what to do here?
+		if (popupState == PopupState.SENSOR_OCCUPIED) {
+			popupState = PopupState.NULL;// here just do whatever, because we
+											// are doing something usefully as
+											// well as waiting for the sensor
 			return true;
 		}
+		if (waitingGlasses.size() > 0 && popupState == PopupState.RAISED
+				&& wState != WorkStationState.BOTH_WORKSTATION_OCCUPIED) {
+			// when popup is raised, and there is another glass coming in!!!
+			doLowerPopup();
+			return true;
+		}
+		if (waitingGlasses.size() > 0 && popupState != PopupState.RAISED
+				|| waitingGlasses.size() > 0 && popupState == PopupState.RAISED
+				&& wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED) {// when
+			// popup
+			// is
+			// lowered || the pop is raised and both workstation occupied
+			checkStationState();
+			return true;
+		}
+		/*
+		 * if (doneGlasses.size() > 0 && popupState == PopupState.RAISED) {
+		 * passGlassToNextFamily(); return true; }
+		 */
 		return false;
 	}
 
@@ -140,37 +217,90 @@ public class PopupAgent extends Agent implements Popup {
 		// Fired when the popup should push its glass onto the next conveyor
 		else if (channel == TChannel.POPUP
 				&& event == TEvent.POPUP_GUI_MOVED_DOWN) {
-
-			transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_RELEASE_GLASS,
-					args);
-		}
-		// do something when load finished, here, always raise this up fix this
-		// later
-		else if (channel == TChannel.POPUP
-				&& event == TEvent.POPUP_GUI_LOAD_FINISHED) {
+			/*
+			 * transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_RELEASE_GLASS,
+			 * args);
+			 */
+		} else if (channel == TChannel.POPUP
+				&& event == TEvent.POPUP_GUI_LOAD_FINISHED) {// if load
+																// finished, do
+																// move up
 			transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_DO_MOVE_UP, args);
 		}
 		// do something when release finished, fire an event to sensor
 		else if (channel == TChannel.POPUP
 				&& event == TEvent.POPUP_GUI_RELEASE_FINISHED) {
-			state = PopupState.SENDING_GLASS_TO_SENSOR;
+			popupState = PopupState.SENDING_GLASS_TO_SENSOR;
+			if (wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED)
+				wState = WorkStationState.BOT_WORKSTATION_OCCUPIED;
+			else if (wState == WorkStationState.BOT_WORKSTATION_OCCUPIED
+					|| wState == WorkStationState.TOP_WORKSTATION_OCCUPIED)
+				wState = WorkStationState.EMPTY;
 			transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED,
 					args);
+		} else if (channel == TChannel.POPUP
+				&& event == TEvent.WORKSTATION_DO_LOAD_GLASS) {
+			// if workstation starts to load glass, change the popup state
+			if (wState == WorkStationState.TOP_WORKSTATION_OCCUPIED
+					&& wState == WorkStationState.BOT_WORKSTATION_OCCUPIED)
+				wState = WorkStationState.BOTH_WORKSTATION_OCCUPIED;
+			else if (wState != WorkStationState.TOP_WORKSTATION_OCCUPIED) {
+				wState = WorkStationState.TOP_WORKSTATION_OCCUPIED;
+			} else {
+				if (wState == WorkStationState.TOP_WORKSTATION_OCCUPIED)
+					wState = WorkStationState.BOT_WORKSTATION_OCCUPIED;
+				else
+					wState = WorkStationState.TOP_WORKSTATION_OCCUPIED;
+			}
+
+		} else if (channel == TChannel.POPUP
+				&& event == TEvent.WORKSTATION_RELEASE_GLASS) {
+			// do something here??
 		}
 		stateChanged();
 	}
 
 	// methods:
-	
-	public void passGlassToNextFamily(){
-		cf2.sensor1.msgHereIsGlass(this,glasses.remove(0));
+	public void doLowerPopup() {
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
+		popupState = PopupState.WORKING_ON_GLASS;
+		transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_DO_MOVE_DOWN, args);
+		// I checked in the scheduler, if there bot one is empty, just send the
+		// sensor the msgIAmEmpty()
+		cf.sensor2.msgIAmEmpty();
+		raise = false;
 		stateChanged();
 	}
+
+	public void checkStationState() {
+		if (wState != WorkStationState.BOTH_WORKSTATION_OCCUPIED) {
+			cf.sensor2.msgIAmEmpty();
+			glasses.add(waitingGlasses.remove(0));
+		} else {
+			cf.sensor2.msgIAmOccupied();// tell sensor2 to wait
+			waitingGlasses.remove(0);
+		}
+		stateChanged();
+	}
+
+	public void passGlassToNextFamily() {
+
+		cf2.sensor1.msgHereIsGlass(this, doneGlasses.remove(0));
+		popupState = PopupState.NULL;
+		stateChanged();
+	}
+
 	public void glassArrived() {
 		// TODO add more implementation later, needs to check recipe here
 		// if(glass.recipe.XXX)
-		state = PopupState.WORKING_ON_GLASS;
-		raise = true;
+		popupState = PopupState.WORKING_ON_GLASS;
+		if (wState != WorkStationState.BOTH_WORKSTATION_OCCUPIED)// if there is
+																	// at least
+																	// one
+																	// workstation
+																	// empty,
+			raise = true;
 		stateChanged();
 	}
 
@@ -184,9 +314,19 @@ public class PopupAgent extends Agent implements Popup {
 	 * ToDo: add some detail
 	 */
 	public void DoRaisePopup() {
-		// glasses.remove(0);
+		if (wState == WorkStationState.EMPTY) {
+			top.msgHereIsGlass(this, glasses.remove(glasses.size() - 1));
+			wState = WorkStationState.TOP_WORKSTATION_OCCUPIED;
+		} else if (wState == WorkStationState.TOP_WORKSTATION_OCCUPIED) {
+			bot.msgHereIsGlass(this, glasses.remove(glasses.size() - 1));
+			wState = WorkStationState.BOTH_WORKSTATION_OCCUPIED;
+		} else if (wState == WorkStationState.BOT_WORKSTATION_OCCUPIED) {
+			bot.msgHereIsGlass(this, glasses.remove(glasses.size() - 1));
+			wState = WorkStationState.BOTH_WORKSTATION_OCCUPIED;
+		}
 		cf.sensor2.msgIAmOccupied();
-		raise = false;
+		popupState = PopupState.RAISED;
+		print("Now, the workstation is at: " + wState);
 		stateChanged();
 	}
 

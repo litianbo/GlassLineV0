@@ -39,7 +39,17 @@ public class MockPopup implements Popup, TReceiver {
 				"Popup received message from sensor that there is glass waiting on the conveoyor  "
 						+ " from agent " + sensor));
 	}
+	@Override
+	public void msgCanISendGlass(Glass glass) {
+		// TODO Auto-generated method stub
+		
+	}
 
+	@Override
+	public void msgGlassDone(Glass glass) {
+		// TODO Auto-generated method stub
+		
+	}
 	@Override
 	public void msgIAmOccupied() {
 		// TODO Auto-generated method stub
@@ -69,5 +79,7 @@ public class MockPopup implements Popup, TReceiver {
 		// TODO Auto-generated method stub
 
 	}
+
+	
 
 }

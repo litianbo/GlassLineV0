@@ -16,6 +16,7 @@ public class SensorAgent extends Agent implements Sensor {
 	List<Object> args = Collections.synchronizedList(new ArrayList<Object>());
 	private List<Glass> glasses = Collections
 			.synchronizedList(new ArrayList<Glass>());
+	boolean pcfIsWaiting = false;
 
 	private enum SensorState {
 		NULL, EMPTY, OCCUPIED, WAITING_FOR_CLEAR, WAITING_FOR_POPUP_SENDING_GLASS, OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED, OCCUPIED_AND_SO_DOES_POPUP, EMPTY_BUT_POPUP_IS_NOT_EMPTY, EMPTY_AND_SO_DOES_POPUP
@@ -49,6 +50,15 @@ public class SensorAgent extends Agent implements Sensor {
 
 	// messages
 	/**
+	 * can pass glass to popup
+	 */
+	public void msgIAmEmpty() {
+		// passGlassToPopup();
+		state = SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED;
+		stateChanged();
+	}
+
+	/**
 	 * sent from popup to next family
 	 */
 	@Override
@@ -58,6 +68,7 @@ public class SensorAgent extends Agent implements Sensor {
 		state = SensorState.OCCUPIED;
 		stateChanged();
 	}
+
 	/**
 	 * popup is occupied
 	 */
@@ -142,7 +153,17 @@ public class SensorAgent extends Agent implements Sensor {
 			notifyPopupToWait();
 			return true;
 		}
-		if(state == SensorState.WAITING_FOR_POPUP_SENDING_GLASS){
+		if (state == SensorState.WAITING_FOR_POPUP_SENDING_GLASS) {
+			notifyPopupToSend();
+			return true;
+		}
+		if (state == SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED) {
+			passGlassToPopup();
+			return true;
+		}
+		if (state == SensorState.EMPTY && pcfIsWaiting) {// notify previous
+															// conveyor family
+															// to send
 			notifyPopupToSend();
 			return true;
 		}
@@ -181,18 +202,26 @@ public class SensorAgent extends Agent implements Sensor {
 	}
 
 	// methods:
+	public void passGlassToPopup() {
+		cf.popup.msgHereIsGlass(this, glasses.remove(0));
+		stateChanged();
+	}
+
 	public void notifyPopupToSend() {
-		if (pcf != null)
+		if (pcf != null) {
 			pcf.popup.msgIAmEmpty();
-		else
+			pcfIsWaiting = false;
+		} else
 			print("previous conveyor family is null, check it out!!!");
+
 		stateChanged();
 	}
 
 	public void notifyPopupToWait() {
-		if (pcf != null)
+		if (pcf != null) {
 			pcf.popup.msgIAmOccupied();
-		else
+			pcfIsWaiting = true;
+		} else
 			print("previous conveyor family is null, check it out!!!");
 		stateChanged();
 	}
@@ -200,7 +229,5 @@ public class SensorAgent extends Agent implements Sensor {
 	public String getName() {
 		return name;
 	}
-
-	
 
 }

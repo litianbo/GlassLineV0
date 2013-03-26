@@ -6,6 +6,10 @@ import engine.agent.Glass;
 
 public interface Sensor {
 	/**
+	 * sent from popup as as response to msgCanISendGlass
+	 */
+	public abstract void msgIAmEmpty();
+	/**
 	 * sent from popup
 	 */
 	public abstract void msgIAmOccupied();

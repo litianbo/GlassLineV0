@@ -7,38 +7,59 @@ import engine.agent.SensorAgent;
 
 public interface Popup {
 	/**
+	 * sent from glass
+	 * @param glass
+	 */
+	public abstract void msgGlassDone(Glass glass);
+	/**
 	 * 
-	 * @param glass the glass that pass to popup agent
+	 * @param glass
+	 *            the glass that pass to popup agent
 	 */
 	public abstract void msgHereIsGlass(Sensor sensor, Glass glass);
+
 	/**
 	 * glass is waiting on the sensor
+	 * 
 	 * @param sensor
 	 */
 	public abstract void msgGlassIsWaiting(Sensor sensor);
-	
+
+	/**
+	 * sent from front end sensor, check to see if two workstations are both
+	 * occupied
+	 * 
+	 */
+	public abstract void msgCanISendGlass(Glass glass);
+
 	public abstract void setName(String name);
+
 	/**
 	 * sent from sensor, as a response to popup's msgCanISendGlass
 	 */
 	public abstract void msgIAmOccupied();
+
 	/**
 	 * sent from sensor, as a response to popup's msgCanISendGlass
 	 */
 	public abstract void msgIAmEmpty();
+
 	/**
 	 * return the name of this popup
+	 * 
 	 * @return
 	 */
 	public abstract String getName();
+
 	/**
 	 * react to the event fired by other agents
+	 * 
 	 * @param channel
 	 * @param event
 	 * @param args
 	 */
-	 
+
 	public abstract void eventFired(TChannel channel, TEvent event,
 			Object[] args);
-	
+
 }

@@ -38,13 +38,13 @@ public class MockSensor implements Sensor, TReceiver {
 
 	@Override
 	public void msgHereIsGlass(Popup popup, Glass glass) {
-		log.add(new LoggedEvent("I know that there is glass incoming "));
+		log.add(new LoggedEvent("I know that there is glass incoming"));
 	}
 
 	@Override
 	public void msgIAmOccupied() {
 
-		log.add(new LoggedEvent("I know that popup is occupied "));
+		log.add(new LoggedEvent("I know that popup is occupied"));
 	}
 
 	@Override
@@ -95,6 +95,12 @@ public class MockSensor implements Sensor, TReceiver {
 	public String getName() {
 		// TODO Auto-generated method stub
 		return name;
+	}
+
+	@Override
+	public void msgIAmEmpty() {
+
+		log.add(new LoggedEvent("I know that popup is empty "));
 	}
 
 }
