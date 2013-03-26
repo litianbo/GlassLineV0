@@ -7,13 +7,13 @@ Factory Project for Class CSCI201 at USC Spring 2013
 Right now, it is V0 only
 ===========
 
-Almost Competed: 
+Competed: 
 ===========
 
 Test for Conveyor
 ===========
 
-Half Completed:
+Completed:
 ===========
 
 Test for Popup
@@ -22,7 +22,6 @@ Test for Popup
 To Do:
 ===========
 
-Test for Sensor1 and Sensor2
+Test for Sensor (This one is hard)
 ===========
 
-A lot of to do!
