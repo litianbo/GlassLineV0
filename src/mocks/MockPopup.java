@@ -12,17 +12,26 @@ import interfaces.Sensor;
 
 public class MockPopup implements Popup, TReceiver {
 	Transducer t;
-	ConveyorFamily cf;
+	ConveyorFamily cf, cf2;
 	String name;
 	public EventLog log = new EventLog();
 
 	public MockPopup(String name, Transducer transducer,
 			ConveyorFamily conveyorFamily1) {
 		this.name = name;
-		// TODO Auto-generated constructor stub
+
 		this.t = transducer;
 		t.register(this, TChannel.SENSOR);
 		this.cf = conveyorFamily1;
+	}
+
+	public MockPopup(String name, Transducer transducer,
+			ConveyorFamily conveyorFamily1, ConveyorFamily conveyorFamily2) {
+		this.name = name;
+		this.t = transducer;
+		t.register(this, TChannel.SENSOR);
+		this.cf = conveyorFamily1;
+		this.cf2 = conveyorFamily2;
 	}
 
 	@Override
@@ -39,26 +48,28 @@ public class MockPopup implements Popup, TReceiver {
 				"Popup received message from sensor that there is glass waiting on the conveoyor  "
 						+ " from agent " + sensor));
 	}
+
 	@Override
-	public void msgCanISendGlass(Glass glass) {
-		// TODO Auto-generated method stub
-		
+	public void msgCanISendGlass(Sensor sensor,Glass glass) {
+		log.add(new LoggedEvent("I know that sensor is going to send glass from " + sensor.getName()));
+
 	}
 
 	@Override
 	public void msgGlassDone(Glass glass) {
 		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void msgIAmOccupied() {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void msgIAmEmpty() {
-		// TODO Auto-generated method stub
+	public void msgIAmOccupied(Sensor sensor) {
+		log.add(new LoggedEvent("I know that sensor is occupied from " + sensor.getName()));
+
+	}
+
+	@Override
+	public void msgIAmEmpty(Sensor sensor) {
+		log.add(new LoggedEvent("I know that sensor is empty from " + sensor.getName()));
 
 	}
 
@@ -79,7 +90,5 @@ public class MockPopup implements Popup, TReceiver {
 		// TODO Auto-generated method stub
 
 	}
-
-	
 
 }

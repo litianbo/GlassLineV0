@@ -103,4 +103,22 @@ public class MockSensor implements Sensor, TReceiver {
 		log.add(new LoggedEvent("I know that popup is empty "));
 	}
 
+	@Override
+	public void msgIAmEmpty(Conveyor conveyor) {
+		log.add(new LoggedEvent("I know that conveyor is empty "));
+
+	}
+
+	@Override
+	public void msgIAmOccupied(Conveyor conveyor) {
+		log.add(new LoggedEvent("I know that conveyor is occupied "));
+
+	}
+
+	@Override
+	public void msgCanISendGlass(Conveyor conveyor) {
+		log.add(new LoggedEvent("I know that conveyor is going to send glass "));
+		
+	}
+
 }

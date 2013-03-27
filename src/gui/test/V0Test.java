@@ -2,6 +2,7 @@ package gui.test;
 
 import org.junit.Test;
 
+import mocks.MockConveyor;
 import mocks.MockPopup;
 import mocks.MockSensor;
 import mocks.MockWorkStation;
@@ -9,6 +10,7 @@ import engine.agent.ConveyorAgent;
 import engine.agent.Glass;
 import engine.agent.PopupAgent;
 import engine.agent.Recipe;
+import engine.agent.SensorAgent;
 import engine.agent.WorkStationAgent;
 import engine.util.ConveyorFamily;
 import transducer.TChannel;
@@ -54,7 +56,7 @@ public class V0Test extends TestCase {
 				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
 						+ sensor2.log.toString(), 0, sensor2.log.size());
 		// now, give the conveyor the right state in order to test,
-		conveyor.msgHereIsGlass(glass);
+		conveyor.msgHereIsGlass(sensor1, glass);
 		// now, neither sensor1 or sensor2 should still have message right now,
 		// so, use 'equal' to check it
 		assertEquals(
@@ -79,7 +81,7 @@ public class V0Test extends TestCase {
 		// of sensor later, now, just assume the sensor work and test conveyor)
 		conveyor.msgIAmOccupied();
 		// give a new glass named glass2
-		conveyor.msgHereIsGlass(new Glass(new Recipe(), "glass2"));
+		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass2"));
 		// I need to make the state of conveyor to WAITING_FOR_POP by calling
 		// the scheudler
 		conveyor.pickAndExecuteAnAction();
@@ -89,12 +91,15 @@ public class V0Test extends TestCase {
 		assertTrue(
 				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ sensor2.log.toString(),
-				sensor2.log.containsString("I know that there is "));
+				sensor2.log
+						.containsString("I know that there is glass waiting"));
 		// Test for interaction with front end sensor
 		// if conveyor has more than three glass?, does front end sensor stop
 		// sending glass?
-		conveyor.msgHereIsGlass(new Glass(new Recipe(), "glass3"));
-		conveyor.msgHereIsGlass(new Glass(new Recipe(), "glass4"));
+		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass3"));
+		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass4"));
+		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass5"));
+		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass6"));
 		// now, run scheduler to see what happoen?
 		conveyor.pickAndExecuteAnAction();
 		assertTrue(
@@ -103,6 +108,7 @@ public class V0Test extends TestCase {
 				sensor1.log
 						.containsString("I know that I should stop sending glass"));
 		// TODO: More on conveyor implementation~!!!
+		// if the back end sensor wants it to stop, it needs to stop immediately
 
 		// sensor.eventFired(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED, args);
 		// popup.eventFired(TChannel.POPUP, TEvent.POPUP_GUI_RELEASE_FINISHED,
@@ -168,7 +174,7 @@ public class V0Test extends TestCase {
 		// suppose sensor2 sending glass to popup, then popup will receive
 		// msgHereIsGlass, I will test sensors later, assume it works properly
 		// right now
-		popup.msgCanISendGlass(glass1);
+		popup.msgCanISendGlass(sensor2, glass1);
 
 		// run scheduler to call the function checkstationstate()
 		popup.pickAndExecuteAnAction();
@@ -215,7 +221,7 @@ public class V0Test extends TestCase {
 		// now, next conveyor family received incoming glass message
 		// Again, here, suppose sensor works properly(test sensor later), and it
 		// sends the msgIAmEmpty back to the previous popup agent
-		popup.msgIAmEmpty();
+		popup.msgIAmEmpty(sensor2);
 		// suppse the workstation sent the finished glass to popup
 		popup.msgGlassDone(glass1);
 		// set the correct stage, then run the scheduler
@@ -266,7 +272,7 @@ public class V0Test extends TestCase {
 		// now, there are two workstations at popup, now, let's see how do they
 		// interact with popup
 		// firstly, there is glass coming to the popup
-		popup.msgCanISendGlass(glass1);
+		popup.msgCanISendGlass(sensor2, glass1);
 		// run scheduler to call the function checkstationstate()
 		popup.pickAndExecuteAnAction();
 		// now, sensor should receive msgIAmEmpty(),test it!
@@ -308,7 +314,7 @@ public class V0Test extends TestCase {
 		sensor2.log.clear();
 		// now, popup is raised, suppose another glass is coming to the sensor
 
-		popup.msgCanISendGlass(glass2);
+		popup.msgCanISendGlass(sensor2, glass2);
 		// run scheduler to call the function doLowerPopup()
 		popup.pickAndExecuteAnAction();
 		assertTrue(
@@ -347,7 +353,7 @@ public class V0Test extends TestCase {
 
 		// now, the workstation of popup should set to occupied in both
 		// suppose sensor wants to sent another glass right now,
-		popup.msgCanISendGlass(glass3);
+		popup.msgCanISendGlass(sensor2, glass3);
 		// run scheduler to call the function checkstationstate()
 		popup.pickAndExecuteAnAction();
 		// now, sensor should receive msgIAmOccupied(),test it!
@@ -371,7 +377,7 @@ public class V0Test extends TestCase {
 		// now, next conveyor family received incoming glass message
 		// Again, here, suppose sensor works properly(test sensor later), and it
 		// sends the msgIAmEmpty back to the previous popup agent
-		popup.msgIAmEmpty();
+		popup.msgIAmEmpty(sensor2);
 		// it totally depend on the GUI, hence, call eventFired() is a easy way
 		// to test it
 		top.eventFired(TChannel.POPUP, TEvent.WORKSTATION_RELEASE_GLASS, args);
@@ -401,7 +407,7 @@ public class V0Test extends TestCase {
 						+ sensor1.log.toString(), 1, sensor1.log.size());
 		sensor1.log.clear();
 		// again, suppose the sensor works, and send the msgIAmEmpty() to popup
-		popup.msgIAmEmpty();
+		popup.msgIAmEmpty(sensor2);
 		// run the scheduler, it will sent the glass to sensor
 		popup.pickAndExecuteAnAction();
 		assertTrue(
@@ -425,7 +431,7 @@ public class V0Test extends TestCase {
 				args);
 		// Again, here, suppose sensor works properly(test sensor later), and it
 		// sends the msgIAmOccupied back to the previous popup agent
-		popup.msgIAmOccupied();
+		popup.msgIAmOccupied(sensor2);
 		popup.pickAndExecuteAnAction();
 		// here is important!!! the sensor1 should not receive anything because
 		// we are not passing glass due to the capacity of the sensor
@@ -434,7 +440,7 @@ public class V0Test extends TestCase {
 						+ sensor1.log.toString(), 0, sensor1.log.size());
 		sensor1.log.clear();
 		// assume 1 year later, the sensor sent the msgIAmEmpty() to the popup
-		popup.msgIAmEmpty();
+		popup.msgIAmEmpty(sensor2);
 		popup.pickAndExecuteAnAction();
 		assertTrue(
 				"Mock sensor1 should have received the msg after the pickAndExecuteAnAction. Event log: "
@@ -443,7 +449,7 @@ public class V0Test extends TestCase {
 						.containsString("I know that there is glass incoming"));
 		sensor1.log.clear();
 		// now, can a third one raise to the workstation?
-		popup.msgCanISendGlass(glass3);
+		popup.msgCanISendGlass(sensor2, glass3);
 		// run scheduler to call the function doLowerPopup()
 		popup.pickAndExecuteAnAction();
 		assertTrue(
@@ -478,14 +484,319 @@ public class V0Test extends TestCase {
 				"1 message should have been sent to the workstation. Event log: "
 						+ top.log.toString(), 1, top.log.size());
 		top.log.clear();
-		//no more about the popup to test at this point
+		// no more about the popup to test at this point
 	}
 
 	/**
 	 * TODO: test the sensors
 	 */
 	public void testSensor() {
+		Transducer transducer = new Transducer();
+		Glass glass1 = new Glass(new Recipe(), "glass1");
+		Glass glass2 = new Glass(new Recipe(), "glass2");
+		Glass glass3 = new Glass(new Recipe(), "glass3");
+		// last conveoyrfamily
+		ConveyorFamily conveyorFamily1 = new ConveyorFamily();
+		// this conveyor family
+		ConveyorFamily conveyorFamily2 = new ConveyorFamily();
+		// create mock popup
+		MockPopup popup = new MockPopup("Preivous Popup", transducer,
+				conveyorFamily2, conveyorFamily1);
+		// create mock conveyor
+		MockConveyor conveyor = new MockConveyor("Conveyor", transducer,
+				conveyorFamily2);
+		// create sensors
+		SensorAgent frontSensor = new SensorAgent("Sensor1", transducer,
+				conveyorFamily2, conveyorFamily1);// end a popup, start a
+													// conveyor
+		SensorAgent backSensor = new SensorAgent("Sensor2", transducer,
+				conveyorFamily2, conveyorFamily1);// end a conveoyr, start a
+													// popup
 
+		conveyorFamily1.setPopup(popup);
+		conveyorFamily2.setConveyor1(conveyor);
+		conveyorFamily2.setSensor1(backSensor);
+		conveyorFamily2.setSensor1(frontSensor);
+		// since popup has been tested above, here, suppose popup sent a glass
+		// to the frontSensor
+		frontSensor.msgCanISendGlass();
+		// now, since at initial, the state of the sensor is empty, after
+		// running the scheduler, it should notify popup to send glass
+		frontSensor.pickAndExecuteAnAction();
+		// test if popup receive the msg or not
+		assertTrue(
+				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ popup.log.toString(),
+				popup.log.containsString("I know that sensor is empty"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ popup.log.toString(), 1, popup.log.size());
+		assertTrue(
+				"Message should be sent from " + frontSensor.toString(),
+				popup.log.getLastLoggedEvent().getMessage()
+						.contains(frontSensor.getName()));
+		popup.log.clear();
+
+		// we test popup earlier, now, it should send msgHereIsGlass() to
+		// sensor2
+		frontSensor.msgHereIsGlass(popup, glass1);
+		// now, this sensor is occupied, what if another glass coming?
+		frontSensor.msgCanISendGlass();
+		// run scheduler to call method to send correct msg
+		frontSensor.pickAndExecuteAnAction();
+		// test if popup receive the msg or not
+		assertTrue(
+				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ popup.log.toString(),
+				popup.log.containsString("I know that sensor is occupied"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ popup.log.toString(), 1, popup.log.size());
+		assertTrue(
+				"Message should be sent from " + frontSensor.toString(),
+				popup.log.getLastLoggedEvent().getMessage()
+						.contains(frontSensor.getName()));
+		popup.log.clear();
+
+		// after run the schduler, sensor pass to the conveyor
+		frontSensor.pickAndExecuteAnAction();
+		// mock conveyor should notified by msgCanISendGlass()
+		assertTrue(
+				"Mock conveyor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ conveyor.log.toString(),
+				conveyor.log
+						.containsString("I know that sensor is going to send glass"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 1, conveyor.log.size());
+		assertTrue(
+				"Message should be sent from " + frontSensor.toString(),
+				conveyor.log.getLastLoggedEvent().getMessage()
+						.contains(frontSensor.getName()));
+		conveyor.log.clear();
+		// then, conveyor send back msgIAmEmpty() to sensor
+		frontSensor.msgIAmEmpty(conveyor);
+		// now, run the schduler,
+		frontSensor.pickAndExecuteAnAction();
+		// now, conveyor should receive msgHereIsGlass()
+		assertTrue(
+				"Mock conveyor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ conveyor.log.toString(),
+				conveyor.log
+						.containsString("I know that there is glass coming"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 1, conveyor.log.size());
+		assertTrue(
+				"Message should be sent from " + frontSensor.toString(),
+				conveyor.log.getLastLoggedEvent().getMessage()
+						.contains(frontSensor.getName()));
+		conveyor.log.clear();
+
+		// now, test if the sensor respond correctly when the conveyor has too
+		// much glass on it
+		// suppose popup give it a new glass glass2
+		frontSensor.msgHereIsGlass(popup, glass2);
+		// now, run scheduler to send glass to conveyor
+		frontSensor.pickAndExecuteAnAction();
+		// now, sensor sent msgCanISendGlass() to conveyor
+		assertTrue(
+				"Mock conveyor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ conveyor.log.toString(),
+				conveyor.log
+						.containsString("I know that sensor is going to send glass"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 1, conveyor.log.size());
+		assertTrue(
+				"Message should be sent from " + frontSensor.toString(),
+				conveyor.log.getLastLoggedEvent().getMessage()
+						.contains(frontSensor.getName()));
+		conveyor.log.clear();
+		// suppose conveyor is stopped due to the capacity of the back end
+		// sensor
+		// it will give frontSensor msgIAmOccupied();
+		frontSensor.msgIAmOccupied(conveyor);
+		// nothing should conveyor receive
+		frontSensor.pickAndExecuteAnAction();
+		assertEquals(
+				"0 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 0, conveyor.log.size());
+		conveyor.log.clear();
+		// popup from previous family should notified to stop sending glass
+		// actually this one is not important, since before popup send glass, it
+		// will send msgCanISendGlass() to sensor1 anyway
+		assertTrue(
+				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ popup.log.toString(),
+				popup.log.containsString("I know that sensor is occupied"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ popup.log.toString(), 1, popup.log.size());
+		assertTrue(
+				"Message should be sent from " + frontSensor.toString(),
+				popup.log.getLastLoggedEvent().getMessage()
+						.contains(frontSensor.getName()));
+		popup.log.clear();
+		// after conveyor starts, test if sensor can send glass to conveyor and
+		// notify popup
+		frontSensor.msgIAmEmpty(conveyor);
+		frontSensor.pickAndExecuteAnAction();
+		// now, conveyor should receive msgHereIsGlass();
+		assertTrue(
+				"Mock conveyor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ conveyor.log.toString(),
+				conveyor.log
+						.containsString("I know that there is glass coming"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 1, conveyor.log.size());
+		assertTrue(
+				"Message should be sent from " + frontSensor.toString(),
+				conveyor.log.getLastLoggedEvent().getMessage()
+						.contains(frontSensor.getName()));
+		conveyor.log.clear();
+		// now, the state of front sensor is empty, test if popup working
+		// properly
+		// suppose it sends msgCanISendGlass
+		frontSensor.msgCanISendGlass();
+		frontSensor.pickAndExecuteAnAction();
+		// now, popup should receive msgIAmEmpty()
+		assertTrue(
+				"Mock popip should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ popup.log.toString(),
+				popup.log.containsString("I know that sensor is empty"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ popup.log.toString(), 1, popup.log.size());
+		assertTrue(
+				"Message should be sent from " + frontSensor.toString(),
+				popup.log.getLastLoggedEvent().getMessage()
+						.contains(frontSensor.getName()));
+		popup.log.clear();
+		// done for front sensor test
+		// now testing the back sensor
+		// can it receive glass properly?
+		backSensor.msgCanISendGlass(conveyor);
+		backSensor.pickAndExecuteAnAction();
+		// now, conveyor should receive msgIAmEmpty();
+		assertTrue(
+				"Mock conveyor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ conveyor.log.toString(),
+				conveyor.log.containsString("I know that sensor is empty"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 1, conveyor.log.size());
+
+		conveyor.log.clear();
+
+		// again, suppose conveyor sends msgHereIsGlass() to the backsensor
+		backSensor.msgHereIsGlass(conveyor, glass1);
+		// set the popup to this conveyor family
+		conveyorFamily2.setPopup(popup);
+		// if the popup is empty, backSensor push glass to popup
+		backSensor.pickAndExecuteAnAction();
+		// popup should receive msgCanISendGlass()
+		assertTrue(
+				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ popup.log.toString(),
+				popup.log
+						.containsString("I know that sensor is going to send glass"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ popup.log.toString(), 1, popup.log.size());
+		assertTrue(
+				"Message should be sent from " + backSensor.toString(),
+				popup.log.getLastLoggedEvent().getMessage()
+						.contains(backSensor.getName()));
+		popup.log.clear();
+		// after popup said ok, it send msgIAmEmpty() to back sensor
+		backSensor.msgIAmEmpty();
+		backSensor.pickAndExecuteAnAction();
+		// popup should receive msgHereIsGlass();
+		assertTrue(
+				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ popup.log.toString(),
+				popup.log.containsString("Popup received glass"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ popup.log.toString(), 1, popup.log.size());
+		assertTrue(
+				"Message should be sent from " + backSensor.toString(),
+				popup.log.getLastLoggedEvent().getMessage()
+						.contains(backSensor.getName()));
+		popup.log.clear();
+
+		// now, if the popup is full or raising, sensor should wait and notify
+		// the conveyor
+		// popup respond to it as msgIAmOccupied
+		backSensor.msgIAmOccupied();
+		// now the state is changed to: EMPTY_BUT_POPUP_IS_NOT
+		// conveyor shouldn't receive any message right now
+		assertEquals(
+				"0 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 0, conveyor.log.size());
+		// now, suppose conveyor sends glass to sensor
+		backSensor.msgCanISendGlass(conveyor);
+		backSensor.pickAndExecuteAnAction();
+		// now, conveyor should receive message msgIAmEmpty() because sensor is
+		// empty right now. After it is occupied by this glass, if the conveyor
+		// wants to send one more glass (which means that glass is close to
+		// sensor), stop the whole conveyor instead of crashing
+		assertTrue(
+				"Mock conveyor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ conveyor.log.toString(),
+				conveyor.log.containsString("I know that sensor is empty"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 1, conveyor.log.size());
+
+		conveyor.log.clear();
+
+		// after conveyor sent glass to it, it is totally full(I want to test
+		// the case when popup is also full)
+		backSensor.msgHereIsGlass(conveyor, glass2);
+		// popup is occupied
+		backSensor.msgIAmOccupied();
+		// if conveyor ask to send one more glass, it will get stopped;
+		backSensor.msgCanISendGlass(conveyor);
+		// now the state is changed to: OCCUPIED AND SO DOES POPUP
+		// run scheduler
+		backSensor.pickAndExecuteAnAction();
+		assertTrue(
+				"Mock conveyor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ conveyor.log.toString(),
+				conveyor.log.containsString("conveyor stopped"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 1, conveyor.log.size());
+
+		conveyor.log.clear();
+		// after popup sent msgIAmEmpty(), sensor should continue send glass to
+		// popup and make conveyor run again
+		backSensor.msgIAmEmpty();
+		backSensor.pickAndExecuteAnAction();
+		// now, popup should receive msgHereIsGlass();
+		assertTrue(
+				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ popup.log.toString(),
+						popup.log.containsString("Popup received glass"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ popup.log.toString(), 1, popup.log.size());
+
+		popup.log.clear();
+		// now, conveyor should also started
+		assertTrue(
+				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ conveyor.log.toString(),
+						conveyor.log.containsString("conveyor started"));
+		assertEquals(
+				"1 message should have been sent to the workstation. Event log: "
+						+ conveyor.log.toString(), 1, conveyor.log.size());
+
+		conveyor.log.clear();
+		// finished testing for Sensors
 	}
 
 	/**

@@ -96,9 +96,10 @@ public class PopupAgent extends Agent implements Popup {
 	 * before sensor pass glass to popup, he needs to check with popup if there
 	 * is space for it
 	 */
-	public void msgCanISendGlass(Glass glass) {
+	public void msgCanISendGlass(Sensor sensor, Glass glass) {
 		waitingGlasses.add(glass);
-		// checkStationState();
+		print("back end sensor want to send glass to me from "
+				+ sensor.getName());
 		stateChanged();
 	}
 
@@ -115,9 +116,10 @@ public class PopupAgent extends Agent implements Popup {
 	 * next conveyor family sensor is occupied
 	 */
 	@Override
-	public void msgIAmOccupied() {
+	public void msgIAmOccupied(Sensor sensor) {
 		// TODO Auto-generated method stub
-		print("front end sensor is occupied, don't pass glass");
+		print("front end sensor is occupied, don't pass glass from "
+				+ sensor.getName());
 		sensorOccupied = true;
 		popupState = PopupState.SENSOR_OCCUPIED;
 
@@ -128,9 +130,10 @@ public class PopupAgent extends Agent implements Popup {
 	 * next conveyor family is empty, glass can pass
 	 */
 	@Override
-	public void msgIAmEmpty() {
+	public void msgIAmEmpty(Sensor sensor) {
 		// TODO Auto-generated method stub
-		print("next conveyor family is empty, pass glass");
+		print("next conveyor family is empty, pass glass from "
+				+ sensor.getName());
 		sensorOccupied = false;
 		popupState = PopupState.SENSOR_EMPTY;
 		stateChanged();

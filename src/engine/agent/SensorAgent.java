@@ -17,9 +17,10 @@ public class SensorAgent extends Agent implements Sensor {
 	private List<Glass> glasses = Collections
 			.synchronizedList(new ArrayList<Glass>());
 	boolean pcfIsWaiting = false;
+	boolean stopConveyor = false;
 
 	private enum SensorState {
-		NULL, EMPTY, OCCUPIED, WAITING_FOR_CLEAR, WAITING_FOR_POPUP_SENDING_GLASS, OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED, OCCUPIED_AND_SO_DOES_POPUP, EMPTY_BUT_POPUP_IS_NOT_EMPTY, EMPTY_AND_SO_DOES_POPUP
+		NULL, STOP_CONVEYOR, EMPTY, TELL_CONVEYOR_TO_SEND_GLASS, OCCUPIED, WAIT_CONVEYOR_TO_START, SENDING_GLASS_TO_CONVEYOR, TELL_POPUP_WAITING_FOR_CLEAR, WAITING_FOR_POPUP_SENDING_GLASS, OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED, OCCUPIED_AND_SO_DOES_POPUP, EMPTY_BUT_POPUP_IS_NOT_EMPTY, EMPTY_AND_SO_DOES_POPUP
 	}
 
 	/**
@@ -50,11 +51,55 @@ public class SensorAgent extends Agent implements Sensor {
 
 	// messages
 	/**
+	 * sent from conveyor
+	 */
+	public void msgCanISendGlass(Conveyor conveyor) {
+		print("State: " + state);
+		if (state == SensorState.EMPTY
+				|| state == SensorState.EMPTY_AND_SO_DOES_POPUP
+				|| state == SensorState.EMPTY_BUT_POPUP_IS_NOT_EMPTY)
+			state = SensorState.TELL_CONVEYOR_TO_SEND_GLASS;
+		if (state == SensorState.OCCUPIED_AND_SO_DOES_POPUP) {
+			state = SensorState.STOP_CONVEYOR;
+		}
+		stateChanged();
+	}
+
+	/**
+	 * sent from conveyor, I can't send glass to it
+	 */
+	@Override
+	public void msgIAmOccupied(Conveyor conveyor) {
+
+		state = SensorState.WAIT_CONVEYOR_TO_START;
+		stateChanged();
+
+	}
+
+	/**
+	 * sent from conveyor, I can send glass to it.
+	 */
+	@Override
+	public void msgIAmEmpty(Conveyor conveyor) {
+		if (glasses.size() > 0)
+			state = SensorState.SENDING_GLASS_TO_CONVEYOR;
+		stateChanged();
+
+	}
+
+	/**
 	 * can pass glass to popup
 	 */
 	public void msgIAmEmpty() {
-		// passGlassToPopup();
-		state = SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED;
+
+		if (state == SensorState.OCCUPIED
+				|| state == SensorState.OCCUPIED_AND_SO_DOES_POPUP
+				|| state == SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED) {
+
+			state = SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED;
+
+		} else
+			state = SensorState.EMPTY_AND_SO_DOES_POPUP;
 		stateChanged();
 	}
 
@@ -109,7 +154,8 @@ public class SensorAgent extends Agent implements Sensor {
 		if (state == SensorState.EMPTY) {// if sensor is cleared
 			state = SensorState.WAITING_FOR_POPUP_SENDING_GLASS;
 		} else if (state == SensorState.OCCUPIED) {// if sensor is occupied due
-			state = SensorState.WAITING_FOR_CLEAR; // to too many glasses on
+			state = SensorState.TELL_POPUP_WAITING_FOR_CLEAR; // to too many
+																// glasses on
 			// conveyor
 
 		}
@@ -139,16 +185,16 @@ public class SensorAgent extends Agent implements Sensor {
 			if (name == "Sensor2") {
 				// sensor2 is the back end sensor which connect to the
 				// workstation/popup directly, then notify popups
-				cf.popup.msgGlassIsWaiting(this);
+				cf.popup.msgCanISendGlass(this, glasses.get(0));
 			} else if (name == "Sensor1") {// if it is sensor1, which send glass
 											// to conveyor directly, then notify
 											// conveyor
-				cf.conveyor1.msgGlassIsWaiting(this);
+				cf.conveyor1.msgCanISendGlass(this, glasses.get(0));
 
 			}
 			return true;
 		}
-		if (state == SensorState.WAITING_FOR_CLEAR) {
+		if (state == SensorState.TELL_POPUP_WAITING_FOR_CLEAR) {
 			// tell popup to wait
 			notifyPopupToWait();
 			return true;
@@ -158,13 +204,26 @@ public class SensorAgent extends Agent implements Sensor {
 			return true;
 		}
 		if (state == SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED) {
+
 			passGlassToPopup();
+			if (stopConveyor)
+				activeConveyor();
 			return true;
 		}
-		if (state == SensorState.EMPTY && pcfIsWaiting) {// notify previous
-															// conveyor family
-															// to send
-			notifyPopupToSend();
+		if (state == SensorState.SENDING_GLASS_TO_CONVEYOR) {
+			sendGlassToConveyor();
+			return true;
+		}
+		if (state == SensorState.WAIT_CONVEYOR_TO_START) {
+			notifyPopupToWait();
+			return true;
+		}
+		if (state == SensorState.TELL_CONVEYOR_TO_SEND_GLASS) {
+			notifyConveyorToSend();
+			return true;
+		}
+		if (state == SensorState.STOP_CONVEYOR) {
+			tellConveyorToStop();
 			return true;
 		}
 		return false;
@@ -202,14 +261,42 @@ public class SensorAgent extends Agent implements Sensor {
 	}
 
 	// methods:
+	public void activeConveyor() {
+		print("Conveyor needs to work!");
+		cf.conveyor1.msgStart();
+		stateChanged();
+	}
+
+	public void tellConveyorToStop() {
+		print("Conveyor needs to stop!");
+		cf.conveyor1.msgStop();
+		stopConveyor = true;
+		state = SensorState.OCCUPIED_AND_SO_DOES_POPUP;// switch it back to full
+														// occupied state
+		stateChanged();
+	}
+
+	public void notifyConveyorToSend() {
+		print("Notify conveyor to send glass because I am empty");
+		cf.conveyor1.msgIAmEmpty();
+		stateChanged();
+	}
+
+	public void sendGlassToConveyor() {
+		cf.conveyor1.msgHereIsGlass(this, glasses.remove(0));
+		state = SensorState.EMPTY;
+		stateChanged();
+	}
+
 	public void passGlassToPopup() {
 		cf.popup.msgHereIsGlass(this, glasses.remove(0));
+		state = SensorState.EMPTY;
 		stateChanged();
 	}
 
 	public void notifyPopupToSend() {
 		if (pcf != null) {
-			pcf.popup.msgIAmEmpty();
+			pcf.popup.msgIAmEmpty(this);
 			pcfIsWaiting = false;
 		} else
 			print("previous conveyor family is null, check it out!!!");
@@ -219,10 +306,11 @@ public class SensorAgent extends Agent implements Sensor {
 
 	public void notifyPopupToWait() {
 		if (pcf != null) {
-			pcf.popup.msgIAmOccupied();
+			pcf.popup.msgIAmOccupied(this);
 			pcfIsWaiting = true;
 		} else
 			print("previous conveyor family is null, check it out!!!");
+		state = SensorState.OCCUPIED;// change the state back to occupied
 		stateChanged();
 	}
 

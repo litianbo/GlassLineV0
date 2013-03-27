@@ -7,7 +7,7 @@ import engine.agent.SensorAgent;
 
 public interface Popup {
 	/**
-	 * sent from glass
+	 * sent from workstation
 	 * @param glass
 	 */
 	public abstract void msgGlassDone(Glass glass);
@@ -30,19 +30,19 @@ public interface Popup {
 	 * occupied
 	 * 
 	 */
-	public abstract void msgCanISendGlass(Glass glass);
+	public abstract void msgCanISendGlass(Sensor sensor,Glass glass);
 
 	public abstract void setName(String name);
 
 	/**
 	 * sent from sensor, as a response to popup's msgCanISendGlass
 	 */
-	public abstract void msgIAmOccupied();
+	public abstract void msgIAmOccupied(Sensor sensor);
 
 	/**
 	 * sent from sensor, as a response to popup's msgCanISendGlass
 	 */
-	public abstract void msgIAmEmpty();
+	public abstract void msgIAmEmpty(Sensor sensor);
 
 	/**
 	 * return the name of this popup

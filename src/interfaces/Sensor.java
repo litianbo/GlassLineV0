@@ -6,6 +6,20 @@ import engine.agent.Glass;
 
 public interface Sensor {
 	/**
+	 * sent from conveyor
+	 * @param conveyor
+	 */
+	public abstract void msgCanISendGlass(Conveyor conveyor);
+	/**
+	 * sent from conveyor
+	 */
+	public abstract void msgIAmOccupied(Conveyor conveyor);
+	/**
+	 * sent from conveyor
+	 */
+	public abstract void msgIAmEmpty(Conveyor conveyor);
+	
+	/**
 	 * sent from popup as as response to msgCanISendGlass
 	 */
 	public abstract void msgIAmEmpty();
