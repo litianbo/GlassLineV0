@@ -780,7 +780,7 @@ public class V0Test extends TestCase {
 		assertTrue(
 				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ popup.log.toString(),
-						popup.log.containsString("Popup received glass"));
+				popup.log.containsString("Popup received glass"));
 		assertEquals(
 				"1 message should have been sent to the workstation. Event log: "
 						+ popup.log.toString(), 1, popup.log.size());
@@ -790,13 +790,58 @@ public class V0Test extends TestCase {
 		assertTrue(
 				"Mock popup should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ conveyor.log.toString(),
-						conveyor.log.containsString("conveyor started"));
+				conveyor.log.containsString("conveyor started"));
 		assertEquals(
 				"1 message should have been sent to the workstation. Event log: "
 						+ conveyor.log.toString(), 1, conveyor.log.size());
 
 		conveyor.log.clear();
 		// finished testing for Sensors
+	}
+
+	public void testTwoGlassPassToConveyorFamily() {
+		Transducer transducer = new Transducer();
+		Recipe recipe = new Recipe();
+		Glass glass1 = new Glass(recipe, "glass1");
+		Glass glass2 = new Glass(recipe, "glass2");
+		// previous conveoyrfamily
+		ConveyorFamily conveyorFamily1 = new ConveyorFamily();
+		// this conveyor family
+		ConveyorFamily conveyorFamily2 = new ConveyorFamily();
+		// next conveyor family
+		ConveyorFamily conveyorFamily3 = new ConveyorFamily();
+		// create popup agent
+
+		PopupAgent popup2 = new PopupAgent("This Popup", transducer,
+				conveyorFamily2, conveyorFamily3);
+		// create conveyor agent
+		ConveyorAgent conveyor = new ConveyorAgent("Conveyor", transducer,
+				conveyorFamily2);
+		// create sensors
+		SensorAgent frontSensor = new SensorAgent("Sensor1", transducer,
+				conveyorFamily2, conveyorFamily1);// end a popup, start a
+													// conveyor
+		SensorAgent backSensor = new SensorAgent("Sensor2", transducer,
+				conveyorFamily2, conveyorFamily1);// end a conveoyr, start a
+													// popup
+		// set up components for conveyor family
+
+		conveyorFamily2.setConveyor1(conveyor);
+		conveyorFamily2.setSensor1(backSensor);
+		conveyorFamily2.setSensor1(frontSensor);
+		conveyorFamily2.setPopup(popup2);
+		// create mock conveyor familys
+		MockSensor nextSensor = new MockSensor("Sensor2", transducer,
+				conveyorFamily3, conveyorFamily2);
+		MockPopup mockpopup = new MockPopup("Preivous Popup", transducer,
+				conveyorFamily1, conveyorFamily2);
+		conveyorFamily1.setPopup(mockpopup);
+		conveyorFamily3.setSensor1(nextSensor);
+		// now, test the 11 case
+		// glass1 and glass2 are default set to needs machining
+		// now, suppose previous conveyorfamily() pass glass to this conveyorfamily2
+		
+		
 	}
 
 	/**

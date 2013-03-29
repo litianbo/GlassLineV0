@@ -157,8 +157,12 @@ public class PopupAgent extends Agent implements Popup {
 	public boolean pickAndExecuteAnAction() {
 		// TODO Auto-generated method stub
 
-		if (popupState == PopupState.GLASS_ARRIVED) {
+		if (popupState == PopupState.GLASS_ARRIVED && glasses.get(0).recipe.getNeedWashing()) {
 			glassArrived();
+			return true;
+		}
+		if (popupState == PopupState.GLASS_ARRIVED && !glasses.get(0).recipe.getNeedWashing()) {
+			passToNextConveyorFamily();
 			return true;
 		}
 		if (popupState == PopupState.WORKING_ON_GLASS && raise
@@ -264,6 +268,14 @@ public class PopupAgent extends Agent implements Popup {
 	}
 
 	// methods:
+	public void passToNextConveyorFamily(){
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
+		popupState = PopupState.SENDING_GLASS_TO_SENSOR;
+		transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_DO_MOVE_DOWN, args);
+		
+		stateChanged();
+	}
 	public void doLowerPopup() {
 		Object[] args = new Object[1];
 		args[0] = new Long(0);

@@ -25,15 +25,15 @@ public class Recipe {
 	}
 	
 	public Recipe(){
-		this.needBreakout = false;
-		this.needCrossseam = false;
-		this.needCutting = false;
-		this.needDrilling = false;
-		this.needGrinding = false;
-		this.needBaking = false;
-		this.needPainting = false;
-		this.needUV = false;
-		this.needWashing = false;
+		this.needBreakout = true;
+		this.needCrossseam = true;
+		this.needCutting = true;
+		this.needDrilling = true;
+		this.needGrinding = true;
+		this.needBaking = true;
+		this.needPainting = true;
+		this.needUV = true;
+		this.needWashing = true;
 	}
 	
 	public Boolean getNeedBreakout(){

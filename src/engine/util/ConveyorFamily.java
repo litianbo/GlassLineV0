@@ -1,9 +1,11 @@
 package engine.util;
 
 import engine.agent.ConveyorAgent;
+import engine.agent.Glass;
 import engine.agent.PopupAgent;
 import engine.agent.SensorAgent;
 import interfaces.Conveyor;
+import interfaces.ConveyorFamilyInterface;
 import interfaces.Popup;
 import interfaces.Sensor;
 import transducer.Transducer;
@@ -13,7 +15,7 @@ import transducer.Transducer;
  * @author lenovo
  *
  */
-public class ConveyorFamily {
+public class ConveyorFamily implements ConveyorFamilyInterface{
 	//transducer for the communication in GUI
 	Transducer t = new Transducer();
 	/**
@@ -38,5 +40,22 @@ public class ConveyorFamily {
 	}
 	public void setConveyor1(Conveyor conveyor){
 		this.conveyor1 = conveyor;
+	}
+	@Override
+	public void msgHereIsGlass(Popup popup, Glass glass) {
+		// give glass to sensor1 on next conveyor family 
+		sensor1.msgHereIsGlass(popup, glass);
+		
+		
+	}
+	@Override
+	public void msgStartConveyor() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void msgStopConveyor() {
+		// TODO Auto-generated method stub
+		
 	}
 }
