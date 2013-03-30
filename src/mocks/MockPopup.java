@@ -9,6 +9,7 @@ import transducer.Transducer;
 import interfaces.Conveyor;
 import interfaces.Popup;
 import interfaces.Sensor;
+import interfaces.WorkStation;
 
 public class MockPopup implements Popup, TReceiver {
 	Transducer t;
@@ -42,34 +43,30 @@ public class MockPopup implements Popup, TReceiver {
 	}
 
 	@Override
-	public void msgGlassIsWaiting(Sensor sensor) {
-		// TODO Auto-generated method stub
+	public void msgCanISendGlass(Sensor sensor, Glass glass) {
 		log.add(new LoggedEvent(
-				"Popup received message from sensor that there is glass waiting on the conveoyor  "
-						+ " from agent " + sensor));
-	}
-
-	@Override
-	public void msgCanISendGlass(Sensor sensor,Glass glass) {
-		log.add(new LoggedEvent("I know that sensor is going to send glass from " + sensor.getName()));
+				"I know that sensor is going to send glass from "
+						+ sensor.getName()));
 
 	}
 
 	@Override
-	public void msgGlassDone(Glass glass) {
+	public void msgGlassDone(WorkStation work,Glass glass) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void msgIAmOccupied(Sensor sensor) {
-		log.add(new LoggedEvent("I know that sensor is occupied from " + sensor.getName()));
+		log.add(new LoggedEvent("I know that sensor is occupied from "
+				+ sensor.getName()));
 
 	}
 
 	@Override
 	public void msgIAmEmpty(Sensor sensor) {
-		log.add(new LoggedEvent("I know that sensor is empty from " + sensor.getName()));
+		log.add(new LoggedEvent("I know that sensor is empty from "
+				+ sensor.getName()));
 
 	}
 

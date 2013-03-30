@@ -2,6 +2,7 @@ package gui.test;
 
 import org.junit.Test;
 
+import mocks.MockAnimation;
 import mocks.MockConveyor;
 import mocks.MockPopup;
 import mocks.MockSensor;
@@ -16,6 +17,7 @@ import engine.util.ConveyorFamily;
 import transducer.TChannel;
 import transducer.TEvent;
 import transducer.Transducer;
+import transducer.TransducerDebugMode;
 import junit.framework.TestCase;
 
 public class V0Test extends TestCase {
@@ -27,26 +29,32 @@ public class V0Test extends TestCase {
 	public void testConveyor1() {
 		// create a transducer
 		Transducer transducer = new Transducer();
+		transducer.startTransducer();
+		transducer.setDebugMode(TransducerDebugMode.EVENTS_AND_ACTIONS);
 		// create a glass
-		Glass glass = new Glass(new Recipe(), "glass1");
+		Glass glass1 = new Glass(new Recipe(), "glass1");
+		Glass glass2 = new Glass(new Recipe(), "glass2");
+		Glass glass3 = new Glass(new Recipe(), "glass3");
 		// create a conveyor family
 		ConveyorFamily conveyorFamily1 = new ConveyorFamily();
 		// create a conveyor agent for testing purpose
 		ConveyorAgent conveyor = new ConveyorAgent("Conveyor1", transducer,
 				conveyorFamily1);
 		conveyorFamily1.setConveyor1(conveyor);
-		// create a popupagent for testing purpose
 
 		// create a mock sensor
 		MockSensor sensor1 = new MockSensor("Sensor1", transducer,
 				conveyorFamily1);
 		MockSensor sensor2 = new MockSensor("Sensor2", transducer,
 				conveyorFamily1);
-
+		// create a mock animation
+		MockAnimation animation = new MockAnimation(transducer);
 		// replace the agents with the mocks for the testing
 
 		conveyorFamily1.setSensor1(sensor1);
 		conveyorFamily1.setSensor2(sensor2);
+		// now, test precondition of both sensors, to check if the conveyor send
+		// any messages to them before calling the scheduler
 		// neither sensor1 or sensor2 should have message right now, so use
 		// 'equal' to check it
 		assertEquals(
@@ -55,73 +63,366 @@ public class V0Test extends TestCase {
 		assertEquals(
 				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
 						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
 		// now, give the conveyor the right state in order to test,
-		conveyor.msgHereIsGlass(sensor1, glass);
+		// assume front sensor send the msgCanISendGlass() to conveyor (the
+		// working of the sensor agent doesn't need to test here, beacuse
+		// this sensor is only a mock here, I tested it in another class)
+		conveyor.msgCanISendGlass(sensor1, glass1);// change to right state:
+													// FRONT_SENSOR_CAN_SEND_GLASS
 		// now, neither sensor1 or sensor2 should still have message right now,
-		// so, use 'equal' to check it
+		// so, use 'equal' to check it,precondition
 		assertEquals(
 				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
 						+ sensor1.log.toString(), 0, sensor1.log.size());
 		assertEquals(
 				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
 						+ sensor2.log.toString(), 0, sensor2.log.size());
-
-		// after I run the scheduler, sensor2 will receive the msg:
-		// msgHereIsGlass;
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+		// then, run scheduler to call notifySensor method
 		conveyor.pickAndExecuteAnAction();
+		// now, the mock sensor should receive message: msgIAmEmpty();
 		assertTrue(
-				"Mock sensor2 should have received the msg after the pickAndExecuteAnAction. Event log: "
-						+ sensor2.log.toString(),
-				sensor2.log.containsString("Sensor2 received glass"));
-		// now we want to prove that when the sensor is currently working, the
-		// conveyor stop giving the glass to the sensor
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor1.log.toString(),
+				sensor1.log.containsString("I know that conveyor is empty"));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor1.log.toString(), 1, sensor1.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor1.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		// after sensor echo the msgIAmEmpty back, conveyor needs to start it as
+		// soon as possible
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("CONVEYOR_DO_START"));
 
-		// suppose the sensor sent a msgIAmOccupied to conveyor (Test the
-		// working
-		// of sensor later, now, just assume the sensor work and test conveyor)
-		conveyor.msgIAmOccupied();
-		// give a new glass named glass2
-		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass2"));
-		// I need to make the state of conveyor to WAITING_FOR_POP by calling
-		// the scheudler
+		// clear the log here, so we can use the containsString method without
+		// worrying about the duplicate message received before
+		animation.log.clear();
+		sensor1.log.clear();
+		sensor2.log.clear();
+		// again, suppose the sensor works properly, and it will send the
+		// msgHereIsGlass to conveyor
+		conveyor.msgHereIsGlass(sensor1, glass1);
+		// now, neither sensor1 or sensor2 should still have message right now,
+		// so, use 'equal' to check it, precondition
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+		// after I run the scheduler, sensor2 will receive the msg:
+		// msgCanISendGlass;
 		conveyor.pickAndExecuteAnAction();
-		// call it again to send the msgGlassIsWaiting to the sensor
-		conveyor.pickAndExecuteAnAction();
-		// now the mocksensor received the msgGlassIsWaiting, let's test it!!!
 		assertTrue(
 				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ sensor2.log.toString(),
 				sensor2.log
-						.containsString("I know that there is glass waiting"));
-		// Test for interaction with front end sensor
-		// if conveyor has more than three glass?, does front end sensor stop
-		// sending glass?
-		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass3"));
-		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass4"));
-		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass5"));
-		conveyor.msgHereIsGlass(sensor1, new Glass(new Recipe(), "glass6"));
-		// now, run scheduler to see what happoen?
+						.containsString("I know that conveyor is going to send glass from:"));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor2.log.toString(), 1, sensor2.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor2.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+		// clear the log here, so we can use the containsString method without
+		// worrying about the duplicate message received before
+		sensor1.log.clear();
+		sensor2.log.clear();
+		animation.log.clear();
+		// Again, suppose sensor works properly, it will sent msgIAmEmpty() to
+		// conveyor
+		conveyor.msgIAmEmpty();
+		// now, neither sensor1 or sensor2 should still have message right now,
+		// so, use 'equal' to check it, precondition
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+
+		// run the schduler, then it will send glass to the sensor
+		conveyor.pickAndExecuteAnAction();
+		// now, sensor2 shoould receive glass from conveyor
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor2.log.toString(),
+				sensor2.log.containsString("Sensor2 received glass "));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor2.log.toString(), 1, sensor2.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor2.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+		// transducer fires nothing because it already started;
+		animation.log.clear();
+		sensor1.log.clear();
+		sensor2.log.clear();
+		// now, suppose front sensor give one more piece of glass to the
+		// conveyor, note: I tested all of the following, so I just save
+		// the testing for only the final purpose of this
+		conveyor.msgCanISendGlass(sensor1, glass2);
+		conveyor.pickAndExecuteAnAction();
+		conveyor.msgHereIsGlass(sensor1, glass2);
+		animation.log.clear();
+		sensor1.log.clear();
+		sensor2.log.clear();// clear all of the above log to avoid duplicate
+							// messages
+		conveyor.pickAndExecuteAnAction();
+		// now, back end sensor should receive msgCanISendGlass();
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor2.log.toString(),
+				sensor2.log
+						.containsString("I know that conveyor is going to send glass from:"));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor2.log.toString(), 1, sensor2.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor2.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		// transducer fires event one more time here, because there is a chance
+		// the conveyor stop running in some scenario
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("CONVEYOR_DO_START"));
+
+		animation.log.clear();
+		sensor1.log.clear();
+		sensor2.log.clear();
+		// now, suppose back sensor give msgIAmOccupied to conveyor
+		conveyor.msgIAmOccupied();
+		// pre-conditions:
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+
+		conveyor.pickAndExecuteAnAction();
+		// now state change to WAITING_FOR_SENSOR
+		// now, run scheduler again to send msgGlassWaiting in mock sensor
+		// this msg doesn't do anything in the real agent, it created only for
+		// the test purpose, I created the waiting list in the conveyor, if the
+		// back end sensor is empty, it will send msgIAmEmpty() to the conveyor,
+		// then, the agent will flip the blooean sensorOccupied, and will keep
+		// running
+		conveyor.pickAndExecuteAnAction();
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor2.log.toString(),
+				sensor2.log
+						.containsString("I know that there is glass waiting on the conveyor"));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor2.log.toString(), 1, sensor2.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor2.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("CONVEYOR_DO_STOP"));
+		// transducer fires nothing because it already started;
+		animation.log.clear();
+		sensor1.log.clear();
+		sensor2.log.clear();
+		// suppose one year after, the sensor is empty and it will send the
+		// msgIAmEmpty() to conveyor
+		conveyor.msgIAmEmpty();
+		// test precondition
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+		// now, run the scheduler
+		conveyor.pickAndExecuteAnAction();
+		// sensor2 suppose to receive msgCanISendGlass()
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor2.log.toString(),
+				sensor2.log
+						.containsString("I know that conveyor is going to send glass from:"));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor2.log.toString(), 1, sensor2.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor2.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		// transducer starts again because he needs to send glass to the
+		// recently emptied sensor
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("CONVEYOR_DO_START"));
+
+		animation.log.clear();
+		// clear the log here, so we can use the containsString method without
+		// worrying about the duplicate message received before
+		sensor1.log.clear();
+		sensor2.log.clear();
+		// now, suppose the conveyor needs to stop due to the the other conveyor
+		// family told it to do soF
+		conveyor.msgStop();
+		// precondiction
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+		// transducer fires nothing because it already started and will be stop
+		// after the scheduler runs;
+		animation.log.clear();
+		// run scheduler
+		conveyor.pickAndExecuteAnAction();
+		// now, front sensor should receive msgIAmOccupied() for a
+		// simplification of msgIAmStoped(), these two have the same functin,
+		// but different names
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor1.log.toString(),
+				sensor1.log.containsString("I know that conveyor is occupied"));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor1.log.toString(), 1, sensor1.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor1.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("CONVEYOR_DO_STOP"));
+		animation.log.clear();
+		sensor1.log.clear();
+		sensor2.log.clear();
+		// now, conveyor is at stop state, no matter what the front sensor send
+		// messages to it, it shouldn't allow sensor to send any messages
+		conveyor.msgCanISendGlass(sensor1, glass3);
 		conveyor.pickAndExecuteAnAction();
 		assertTrue(
 				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ sensor1.log.toString(),
-				sensor1.log
-						.containsString("I know that I should stop sending glass"));
-		// TODO: More on conveyor implementation~!!!
-		// if the back end sensor wants it to stop, it needs to stop immediately
-
-		// sensor.eventFired(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED, args);
-		// popup.eventFired(TChannel.POPUP, TEvent.POPUP_GUI_RELEASE_FINISHED,
-		// args);
-		// check if log gets the event fired from above;
-		/*
-		 * assertTrue(
-		 * "Mock sensor should have received the event after the fire. Event log: "
-		 * + sensor.log.toString(), sensor.log .containsString(
-		 * "Sensor received event SENSOR_GUI_PRESSED from channel SENSOR with arguement: 0"
-		 * ));
-		 */
-
+				sensor1.log.containsString("I know that conveyor is occupied"));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor1.log.toString(), 1, sensor1.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor1.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("CONVEYOR_DO_STOP"));
+		// because it stoped
+		animation.log.clear();
+		sensor1.log.clear();
+		sensor2.log.clear();
+		// now, suppose I want the conveyor to start
+		// it will go back to previous state before stop, which is ususally
+		// FRONT_SENSOR_CAN_SEND_GLASS, in other cases: NULL(which means glass
+		// is empty)
+		conveyor.msgStart();
+		// Precondition
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+		// because it stoped, after calling the scheduler, conveyor will run
+		// will run
+		animation.log.clear();
+		// run the scheduler
+		conveyor.pickAndExecuteAnAction();
+		// now, sensor1 should receive msgIAmEmpty()
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ sensor1.log.toString(),
+				sensor1.log.containsString("I know that conveyor is empty"));
+		assertEquals(
+				"1 message should have been sent to the sensor. Event log: "
+						+ sensor1.log.toString(), 1, sensor1.log.size());
+		assertTrue(
+				"Message should be sent from " + conveyor.toString(),
+				sensor1.log.getLastLoggedEvent().getMessage()
+						.contains(conveyor.getName()));
+		assertEquals(
+				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
+						+ sensor2.log.toString(), 0, sensor2.log.size());
+		assertTrue(
+				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("CONVEYOR_DO_START"));
+		animation.log.clear();
+		sensor1.log.clear();
+		sensor2.log.clear();
 	}
 
 	/**
@@ -223,7 +524,7 @@ public class V0Test extends TestCase {
 		// sends the msgIAmEmpty back to the previous popup agent
 		popup.msgIAmEmpty(sensor2);
 		// suppse the workstation sent the finished glass to popup
-		popup.msgGlassDone(glass1);
+		popup.msgGlassDone(top, glass1);
 		// set the correct stage, then run the scheduler
 		popup.pickAndExecuteAnAction();
 		// now, the glass should push to next conveyor family, Test it!!!
@@ -373,7 +674,7 @@ public class V0Test extends TestCase {
 		// here
 		// as an alternative way, we go further and see what happen?
 		// Suppose the workstation sent the finished glass to popup
-		popup.msgGlassDone(glass1);
+		popup.msgGlassDone(top, glass1);
 		// now, next conveyor family received incoming glass message
 		// Again, here, suppose sensor works properly(test sensor later), and it
 		// sends the msgIAmEmpty back to the previous popup agent
@@ -417,7 +718,7 @@ public class V0Test extends TestCase {
 						.containsString("I know that there is glass incoming"));
 		sensor1.log.clear();
 		// next, test the second glass finished
-		popup.msgGlassDone(glass2);
+		popup.msgGlassDone(bot, glass2);
 		bot.eventFired(TChannel.POPUP, TEvent.WORKSTATION_RELEASE_GLASS, args);
 		assertTrue(
 				"Mock workstation should have received the msg after the pickAndExecuteAnAction. Event log: "
@@ -839,9 +1140,9 @@ public class V0Test extends TestCase {
 		conveyorFamily3.setSensor1(nextSensor);
 		// now, test the 11 case
 		// glass1 and glass2 are default set to needs machining
-		// now, suppose previous conveyorfamily() pass glass to this conveyorfamily2
-		
-		
+		// now, suppose previous conveyorfamily() pass glass to this
+		// conveyorfamily2
+
 	}
 
 	/**

@@ -33,4 +33,22 @@ public class MockWorkStation implements WorkStation, TReceiver {
 
 	}
 
+	@Override
+	public void msgIAmLowered() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void msgIAmRaised() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

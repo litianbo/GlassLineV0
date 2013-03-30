@@ -50,12 +50,12 @@ public class ConveyorFamily implements ConveyorFamilyInterface{
 	}
 	@Override
 	public void msgStartConveyor() {
-		// TODO Auto-generated method stub
+		conveyor1.msgStart();
 		
 	}
 	@Override
 	public void msgStopConveyor() {
-		// TODO Auto-generated method stub
+		conveyor2.msgStop();
 		
 	}
 }

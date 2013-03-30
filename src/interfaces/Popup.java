@@ -10,7 +10,7 @@ public interface Popup {
 	 * sent from workstation
 	 * @param glass
 	 */
-	public abstract void msgGlassDone(Glass glass);
+	public abstract void msgGlassDone(WorkStation workstation, Glass glass);
 	/**
 	 * 
 	 * @param glass
@@ -18,13 +18,7 @@ public interface Popup {
 	 */
 	public abstract void msgHereIsGlass(Sensor sensor, Glass glass);
 
-	/**
-	 * glass is waiting on the sensor
-	 * 
-	 * @param sensor
-	 */
-	public abstract void msgGlassIsWaiting(Sensor sensor);
-
+	
 	/**
 	 * sent from front end sensor, check to see if two workstations are both
 	 * occupied

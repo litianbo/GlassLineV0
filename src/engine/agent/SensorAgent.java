@@ -59,7 +59,9 @@ public class SensorAgent extends Agent implements Sensor {
 				|| state == SensorState.EMPTY_AND_SO_DOES_POPUP
 				|| state == SensorState.EMPTY_BUT_POPUP_IS_NOT_EMPTY)
 			state = SensorState.TELL_CONVEYOR_TO_SEND_GLASS;
-		if (state == SensorState.OCCUPIED_AND_SO_DOES_POPUP) {
+		if (state == SensorState.OCCUPIED_AND_SO_DOES_POPUP
+				|| state == SensorState.OCCUPIED
+				|| state == SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED) {
 			state = SensorState.STOP_CONVEYOR;
 		}
 		stateChanged();
@@ -127,21 +129,15 @@ public class SensorAgent extends Agent implements Sensor {
 		stateChanged();
 	}
 
-	/**
-	 * sent from conveyor
-	 */
-	@Override
-	public void msgStopSendingGlassToConveyor() {
-		// TODO Auto-generated method stub
-
-	}
+	
 
 	@Override
 	/**
 	 * glass is waiting on the conveyor
 	 */
 	public void msgGlassIsWaiting(Conveyor conveyor) {
-		// TODO Auto-generated method stub
+		// do nothing, this is test msg for conveyor
+		stateChanged();
 
 	}
 
@@ -170,11 +166,7 @@ public class SensorAgent extends Agent implements Sensor {
 		stateChanged();
 	}
 
-	@Override
-	public void msgIReceivedGlass(Conveyor conveyor, Glass glass) {
-		// TODO Auto-generated method stub
-
-	}
+	
 
 	// schduler:
 	@Override
@@ -264,6 +256,7 @@ public class SensorAgent extends Agent implements Sensor {
 	public void activeConveyor() {
 		print("Conveyor needs to work!");
 		cf.conveyor1.msgStart();
+		stopConveyor = false;
 		stateChanged();
 	}
 

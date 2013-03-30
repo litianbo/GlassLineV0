@@ -5,36 +5,36 @@ import transducer.TEvent;
 import engine.agent.Glass;
 
 public interface Sensor {
+
 	/**
 	 * sent from conveyor
+	 * 
 	 * @param conveyor
 	 */
 	public abstract void msgCanISendGlass(Conveyor conveyor);
+
 	/**
 	 * sent from conveyor
 	 */
 	public abstract void msgIAmOccupied(Conveyor conveyor);
+
 	/**
 	 * sent from conveyor
 	 */
 	public abstract void msgIAmEmpty(Conveyor conveyor);
-	
+
 	/**
 	 * sent from popup as as response to msgCanISendGlass
 	 */
 	public abstract void msgIAmEmpty();
+
 	/**
 	 * sent from popup
 	 */
 	public abstract void msgIAmOccupied();
-	/**
-	 * if conveyor has more than 3 glasses which is more than its capacity,
-	 * sensor should stop sending glass to it
-	 */
-	public abstract void msgStopSendingGlassToConveyor();
 
 	/**
-	 * sent from conveyor there is glass waiting on the sensor
+	 * sent from conveyor there is glass waiting on the sensor, only for test purpose
 	 * 
 	 * @param conveyor
 	 */
@@ -46,20 +46,14 @@ public interface Sensor {
 	 * @param glass
 	 */
 	public abstract void msgHereIsGlass(Conveyor conveyor, Glass glass);
+
 	/**
 	 * pass glass to the sensor, sent from popup
+	 * 
 	 * @param popup
 	 * @param glass
 	 */
-	public abstract void msgHereIsGlass(Popup popup,Glass glass);
-	
-	/**
-	 * print on the console that the sensor is currently holding a glass
-	 * 
-	 * @param glass
-	 *            ,conveyor
-	 */
-	public abstract void msgIReceivedGlass(Conveyor conveyor, Glass glass);
+	public abstract void msgHereIsGlass(Popup popup, Glass glass);
 
 	/**
 	 * sent from popup he wants to send a glass to sensor

@@ -29,7 +29,7 @@ public class Transducer
 	/**
 	 * Thread that processes transducer events
 	 */
-	private Thread transducerThread;
+	public Thread transducerThread;
 
 	/**
 	 * A mapping of all the properties and Agents that are registered

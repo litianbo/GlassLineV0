@@ -43,13 +43,6 @@ public class MockConveyor implements TReceiver, Conveyor {
 	}
 
 	@Override
-	public void msgGlassIsWaiting(Sensor sensor) {
-		log.add(new LoggedEvent("I know that there is glass waiting "
-				+ sensor.getName()));
-
-	}
-
-	@Override
 	public void msgIAmOccupied() {
 		log.add(new LoggedEvent("I know that sensor is occupied "));
 
@@ -78,5 +71,13 @@ public class MockConveyor implements TReceiver, Conveyor {
 		log.add(new LoggedEvent("conveyor started"));
 		
 	}
+
+	@Override
+	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
 
 }

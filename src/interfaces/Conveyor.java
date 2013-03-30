@@ -18,11 +18,6 @@ public interface Conveyor {
 	 */
 	public abstract void msgHereIsGlass(Sensor sensor,Glass glass);
 
-	/**
-	 * notify conveyor that there is glass waiting,react to it!
-	 * @param sensor
-	 */
-	public abstract void msgGlassIsWaiting(Sensor sensor);
 
 	public abstract void msgCanISendGlass(Sensor sensor,Glass glass);
 
@@ -35,6 +30,6 @@ public interface Conveyor {
 	 * sent from sensor2
 	 */
 	public abstract void msgIAmEmpty();
-
+	public abstract String getName();
 	
 }

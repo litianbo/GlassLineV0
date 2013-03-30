@@ -47,18 +47,14 @@ public class MockSensor implements Sensor, TReceiver {
 		log.add(new LoggedEvent("I know that popup is occupied"));
 	}
 
-	@Override
-	public void msgStopSendingGlassToConveyor() {
 
-		log.add(new LoggedEvent("I know that I should stop sending glass "));
-	}
 
 	@Override
 	public void msgGlassIsWaiting(Conveyor conveyor) {
 
 		log.add(new LoggedEvent(
 				"I know that there is glass waiting on the conveyor "
-						+ " from agent " + conveyor));
+						+ " from agent " + conveyor.getName()));
 	}
 
 	@Override
@@ -75,12 +71,7 @@ public class MockSensor implements Sensor, TReceiver {
 				+ " from agent " + conveyor));
 	}
 
-	@Override
-	public void msgIReceivedGlass(Conveyor conveyor, Glass glass) {
-
-		log.add(new LoggedEvent("msgIReceivedGlass, Sensor2 received glass "
-				+ glass.getName() + " from agent " + conveyor));
-	}
+	
 
 	@Override
 	public void eventFired(TChannel channel, TEvent event, Object[] args) {
@@ -105,20 +96,23 @@ public class MockSensor implements Sensor, TReceiver {
 
 	@Override
 	public void msgIAmEmpty(Conveyor conveyor) {
-		log.add(new LoggedEvent("I know that conveyor is empty "));
+		log.add(new LoggedEvent("I know that conveyor is empty from: "
+				+ conveyor.getName()));
 
 	}
 
 	@Override
 	public void msgIAmOccupied(Conveyor conveyor) {
-		log.add(new LoggedEvent("I know that conveyor is occupied "));
+		log.add(new LoggedEvent("I know that conveyor is occupied from: " + conveyor.getName()));
 
 	}
 
 	@Override
 	public void msgCanISendGlass(Conveyor conveyor) {
-		log.add(new LoggedEvent("I know that conveyor is going to send glass "));
-		
+		log.add(new LoggedEvent(
+				"I know that conveyor is going to send glass from: "
+						+ conveyor.getName()));
+
 	}
 
 }
