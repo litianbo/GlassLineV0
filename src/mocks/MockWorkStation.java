@@ -47,8 +47,8 @@ public class MockWorkStation implements WorkStation, TReceiver {
 
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return name;
 	}
 
 }

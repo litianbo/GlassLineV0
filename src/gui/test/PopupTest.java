@@ -292,7 +292,7 @@ public class PopupTest extends TestCase {
 		MockWorkStation top = new MockWorkStation("Top", transducer);
 		MockWorkStation bot = new MockWorkStation("Bot", transducer);
 		// create a popup agent
-		PopupAgent popup = new PopupAgent("Popup1", transducer,
+		PopupAgent popup = new PopupAgent("Popup2", transducer,
 				conveyorFamily1, conveyorFamily2, top, bot);
 		// create mocks
 		// this sensor is on the front of the popup
@@ -329,6 +329,12 @@ public class PopupTest extends TestCase {
 		assertEquals(
 				"1 message should have been sent to the workstation. Event log: "
 						+ sensor2.log.toString(), 1, sensor2.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
+		assertEquals(
+				"Mock sensor1 should have an empty event log now. Instead, the mock sensor1 event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
 		// I have to clear the log here, because it would make no sense to use
 		// containString() to test it over and over
 		sensor2.log.clear();
@@ -336,10 +342,21 @@ public class PopupTest extends TestCase {
 		popup.msgHereIsGlass(sensor2, glass1);
 		popup.pickAndExecuteAnAction();
 		// now, state is changed to working, popup is ready to raise!
-
+		try {
+			transducer.transducerThread.sleep(5);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		assertTrue(
+				"Mock animation should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("POPUP_DO_MOVE_UP"));
+		animation.log.clear();
 		popup.pickAndExecuteAnAction();
 		// now, top workstation should receive msg come from popup, test it!
-
+		// ignore transducer fire events about workstation, because I did in the
+		// testPopupInteractWithSensor
 		assertTrue(
 				"Mock workstation should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ top.log.toString(),
@@ -357,7 +374,7 @@ public class PopupTest extends TestCase {
 				"1 message should have been sent to the workstation. Event log: "
 						+ sensor2.log.toString(), 1, sensor2.log.size());
 		sensor2.log.clear();
-		// now, popup is raised, suppose another glass is coming to the sensor
+		// now, popup is raised, suppose another glass is coming to the popup
 
 		popup.msgCanISendGlass(sensor2, glass2);
 		// run scheduler to call the function doLowerPopup()
@@ -369,12 +386,42 @@ public class PopupTest extends TestCase {
 		assertEquals(
 				"1 message should have been sent to the workstation. Event log: "
 						+ sensor2.log.toString(), 1, sensor2.log.size());
+		try {
+			transducer.transducerThread.sleep(5);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		assertTrue(
+				"Mock animation should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("POPUP_DO_MOVE_DOWN"));// move down
+																	// when pick
+																	// up a
+																	// glass
+		assertEquals(
+				"Mock sensor1 should have an empty event log now. Instead, the mock sensor1 event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
 		sensor2.log.clear();
+		animation.log.clear();
+
 		popup.msgHereIsGlass(sensor2, glass2);
 		// run the sceduler to call glassArrived()
 		popup.pickAndExecuteAnAction();
 		// now, run the scheduler to raise the popup
+		try {
+			transducer.transducerThread.sleep(5);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		assertTrue(
+				"Mock animation should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("POPUP_DO_MOVE_UP"));
+		animation.log.clear();
 		popup.pickAndExecuteAnAction();
+
 		// and sensor2 should receive I am occupied now;
 		assertTrue(
 				"Mock sensor2 should have received the msg after the pickAndExecuteAnAction. Event log: "
@@ -383,6 +430,10 @@ public class PopupTest extends TestCase {
 		assertEquals(
 				"1 message should have been sent to the workstation. Event log: "
 						+ sensor2.log.toString(), 1, sensor2.log.size());
+		assertEquals(
+				"Mock sensor1 should have an empty event log now. Instead, the mock sensor1 event log reads: "
+						+ sensor1.log.toString(), 0, sensor1.log.size());
+
 		sensor2.log.clear();
 
 		// now, bot workstation should receive msg come from popup, test it!
@@ -394,6 +445,9 @@ public class PopupTest extends TestCase {
 		assertEquals(
 				"1 message should have been sent to the workstation. Event log: "
 						+ bot.log.toString(), 1, bot.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
 		bot.log.clear();
 
 		// now, the workstation of popup should set to occupied in both
@@ -439,10 +493,11 @@ public class PopupTest extends TestCase {
 				animation.log.containsString("WORKSTATION_RELEASE_GLASS"));
 
 		animation.log.clear();
-
+		
 		// set the state to sending_glass_to_sensor
-		transducer.fireEvent(TChannel.POPUP, TEvent.WORKSTATION_RELEASE_FINISHED,
-				args);
+		transducer.fireEvent(TChannel.POPUP,
+				TEvent.WORKSTATION_RELEASE_FINISHED, args);
+
 		// now run scheduler and next conveyor family will get notified;
 		popup.pickAndExecuteAnAction();
 		assertTrue(
@@ -454,22 +509,43 @@ public class PopupTest extends TestCase {
 				"1 message should have been sent to the sensor1. Event log: "
 						+ sensor1.log.toString(), 1, sensor1.log.size());
 		sensor1.log.clear();
+		// popup receive the same event
 		
+		// of course animation will receive WORKSTATION_RELEASE_FINISHED, so just delete it
+		animation.log.clear();
 		// next, test the second glass finished
 		popup.msgGlassDone(bot, glass2);
-		transducer.fireEvent(TChannel.POPUP, TEvent.WORKSTATION_RELEASE_GLASS, args);
-		
-		transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_GUI_RELEASE_FINISHED,
-				args);
+		// skip the steps asking around whether sensor has space or not.
 		// Again, here, suppose sensor works properly(test sensor later), and it
 		// sends the msgIAmOccupied back to the previous popup agent
 		popup.msgIAmOccupied(sensor2);
+		transducer.fireEvent(TChannel.WASHER, TEvent.WORKSTATION_RELEASE_GLASS,
+				args);
+		try {
+			transducer.transducerThread.sleep(5);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		assertTrue(
+				"Mock animation should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("WORKSTATION_RELEASE_GLASS"));
+
+		animation.log.clear();
+		
+		// set the state to sending_glass_to_sensor
+		transducer.fireEvent(TChannel.POPUP,
+				TEvent.WORKSTATION_RELEASE_FINISHED, args);
 		popup.pickAndExecuteAnAction();
 		// here is important!!! the sensor1 should not receive anything because
 		// we are not passing glass due to the capacity of the sensor
 		assertEquals(
 				"0 message should have been sent to the sensor1. Event log: "
 						+ sensor1.log.toString(), 0, sensor1.log.size());
+		assertEquals(
+				"Mock animation should have an empty event log now. Instead, the mock animation event log reads: "
+						+ animation.log.toString(), 0, animation.log.size());
 		sensor1.log.clear();
 		// assume 1 year later, the sensor sent the msgIAmEmpty() to the popup
 		popup.msgIAmEmpty(sensor2);
@@ -480,10 +556,15 @@ public class PopupTest extends TestCase {
 				sensor1.log
 						.containsString("I know that there is glass incoming"));
 		sensor1.log.clear();
+
 		// now, can a third one raise to the workstation?
+		
+		/*
 		popup.msgCanISendGlass(sensor2, glass3);
 		// run scheduler to call the function doLowerPopup() if needs
+		
 		popup.pickAndExecuteAnAction();
+		
 		assertTrue(
 				"Mock sensor2 should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ sensor2.log.toString(),
@@ -491,7 +572,7 @@ public class PopupTest extends TestCase {
 		assertEquals(
 				"1 message should have been sent to the workstation. Event log: "
 						+ sensor2.log.toString(), 1, sensor2.log.size());
-		sensor2.log.clear();
+		sensor2.log.clear();*/
 		popup.msgHereIsGlass(sensor2, glass3);
 		// run the sceduler to call glassArrived()
 		popup.pickAndExecuteAnAction();
@@ -506,8 +587,14 @@ public class PopupTest extends TestCase {
 				"1 message should have been sent to the workstation. Event log: "
 						+ sensor2.log.toString(), 1, sensor2.log.size());
 		sensor2.log.clear();
-		// now, bot workstation should receive msg come from popup, test it!
-		
+		// animation received do_move_up
+		assertTrue(
+				"Mock animation should have received the msg after the pickAndExecuteAnAction. Event log: "
+						+ animation.log.toString(),
+				animation.log.containsString("POPUP_DO_MOVE_UP"));
+		animation.log.clear();
+		// now, top workstation should receive msg come from popup,
+
 		assertTrue(
 				"Mock workstation should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ top.log.toString(),

@@ -90,6 +90,9 @@ public class PopupAgent extends Agent implements Popup {
 	 */
 	@Override
 	public void msgGlassDone(WorkStation work, Glass glass) {
+		for(int i = 0; i < glasses.size(); i ++){
+			print(glasses.get(i).getName());
+		}
 		if (work.getName() == "Top"
 				&& wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED) {
 			wState = WorkStationState.BOT_WORKSTATION_OCCUPIED;
@@ -97,17 +100,20 @@ public class PopupAgent extends Agent implements Popup {
 				&& wState == WorkStationState.TOP_WORKSTATION_OCCUPIED) {
 			wState = WorkStationState.EMPTY;
 		} else if (work.getName() == "Bot"
-				&&wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED) {
+				&& wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED) {
 			wState = WorkStationState.TOP_WORKSTATION_OCCUPIED;
-		}else if (work.getName() == "Bot"
-				&&wState == WorkStationState.BOT_WORKSTATION_OCCUPIED) {
+		} else if (work.getName() == "Bot"
+				&& wState == WorkStationState.BOT_WORKSTATION_OCCUPIED) {
 			wState = WorkStationState.EMPTY;
-		}
-		else {
+		} else {
 			print("wrong workstate!!!!!!!!!!!!!!!");
 		}
+		print("After release the glass, workstation state is: " + wState
+				+ " workstation name: " + work.getName());
+		
 		doneGlasses.add(glass);
 		glasses.remove(0);
+		
 		stateChanged();
 
 	}
@@ -206,6 +212,7 @@ public class PopupAgent extends Agent implements Popup {
 		if (waitingGlasses.size() > 0 && popupState == PopupState.RAISED
 				&& wState != WorkStationState.BOTH_WORKSTATION_OCCUPIED) {
 			// when popup is raised, and there is another glass coming in!!!
+
 			doLowerPopup();
 			return true;
 		}
@@ -255,11 +262,14 @@ public class PopupAgent extends Agent implements Popup {
 		else if (channel == TChannel.POPUP
 				&& event == TEvent.WORKSTATION_RELEASE_FINISHED) {
 			popupState = PopupState.SENDING_GLASS_TO_SENSOR;
-			if (wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED)
-				wState = WorkStationState.BOT_WORKSTATION_OCCUPIED;
-			else if (wState == WorkStationState.BOT_WORKSTATION_OCCUPIED
-					|| wState == WorkStationState.TOP_WORKSTATION_OCCUPIED)
-				wState = WorkStationState.EMPTY;
+			// do sth this in V1
+			/*
+			 * if (wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED) wState
+			 * = WorkStationState.BOT_WORKSTATION_OCCUPIED; else if (wState ==
+			 * WorkStationState.BOT_WORKSTATION_OCCUPIED || wState ==
+			 * WorkStationState.TOP_WORKSTATION_OCCUPIED) wState =
+			 * WorkStationState.EMPTY;
+			 */
 			// transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED,
 			// args);
 		} else if (channel == TChannel.POPUP
@@ -360,7 +370,10 @@ public class PopupAgent extends Agent implements Popup {
 																	// one
 																	// workstation
 																	// empty,
+		{
 			raise = true;
+
+		}
 		Object[] args = new Object[1];
 		args[0] = new Long(0);
 		transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_DO_MOVE_UP, args);
@@ -377,6 +390,7 @@ public class PopupAgent extends Agent implements Popup {
 	 * ToDo: add some detail
 	 */
 	public void DoRaisePopup() {
+
 		if (wState == WorkStationState.EMPTY) {
 
 			top.msgHereIsGlass(this, glasses.get(glasses.size() - 1));
@@ -392,7 +406,7 @@ public class PopupAgent extends Agent implements Popup {
 		popupState = PopupState.RAISED;
 		top.msgIAmRaised();
 		bot.msgIAmRaised();
-		print("Now, the workstation is at: " + wState);
+		print("After raising, the workstation is at: " + wState);
 		stateChanged();
 	}
 
@@ -414,4 +428,11 @@ public class PopupAgent extends Agent implements Popup {
 		stateChanged();
 	}
 
+	public void setTopWorkStation(WorkStation work) {
+		top = work;
+	}
+
+	public void setBotpWorkStation(WorkStation work) {
+		bot = work;
+	}
 }
