@@ -13,7 +13,7 @@ public class SensorAgent extends Agent implements Sensor {
 	// Data:
 	ConveyorFamily cf, pcf;
 	SensorState state;
-	List<Object> args = Collections.synchronizedList(new ArrayList<Object>());
+
 	private List<Glass> glasses = Collections
 			.synchronizedList(new ArrayList<Glass>());
 	boolean pcfIsWaiting = false;
@@ -93,7 +93,8 @@ public class SensorAgent extends Agent implements Sensor {
 	 * can pass glass to popup
 	 */
 	public void msgIAmEmpty() {
-
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
 		if (state == SensorState.OCCUPIED
 				|| state == SensorState.OCCUPIED_AND_SO_DOES_POPUP
 				|| state == SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED) {
@@ -102,6 +103,7 @@ public class SensorAgent extends Agent implements Sensor {
 
 		} else
 			state = SensorState.EMPTY_AND_SO_DOES_POPUP;
+		transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_RELEASED, args);
 		stateChanged();
 	}
 
@@ -110,10 +112,13 @@ public class SensorAgent extends Agent implements Sensor {
 	 */
 	@Override
 	public void msgHereIsGlass(Popup popup, Glass glass) {
-		// TODO Auto-generated method stub
+
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
 		glasses.add(glass);
 		state = SensorState.OCCUPIED;
 		stateChanged();
+		transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED, args);
 	}
 
 	/**
@@ -128,8 +133,6 @@ public class SensorAgent extends Agent implements Sensor {
 		}
 		stateChanged();
 	}
-
-	
 
 	@Override
 	/**
@@ -161,12 +164,13 @@ public class SensorAgent extends Agent implements Sensor {
 	@Override
 	public void msgHereIsGlass(Conveyor conveyor, Glass glass) {
 		// here, sensor suppose to know every glass passed to it.
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
 		glasses.add(glass);
 		state = SensorState.OCCUPIED;
+		transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED, args);
 		stateChanged();
 	}
-
-	
 
 	// schduler:
 	@Override
@@ -276,7 +280,10 @@ public class SensorAgent extends Agent implements Sensor {
 	}
 
 	public void sendGlassToConveyor() {
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
 		cf.conveyor1.msgHereIsGlass(this, glasses.remove(0));
+		transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_RELEASED, args);
 		state = SensorState.EMPTY;
 		stateChanged();
 	}
