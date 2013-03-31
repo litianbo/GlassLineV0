@@ -249,6 +249,12 @@ public class ConveyorTest extends TestCase {
 		assertEquals(
 				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
 						+ sensor1.log.toString(), 0, sensor1.log.size());
+		try {
+			transducer.transducerThread.sleep(5);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		assertTrue(
 				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
 						+ animation.log.toString(),

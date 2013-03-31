@@ -143,7 +143,7 @@ public class PopupTest extends TestCase {
 				animation.log.containsString("DO_LOAD_GLASS"));
 		animation.log.clear();
 		// after it is done, fire release glass(workstation is not reqiured, so
-		// here, I just assume it works properly)
+		// here, assume it works properly right now)
 		transducer.fireEvent(TChannel.POPUP,
 				TEvent.WORKSTATION_GUI_ACTION_FINISHED, args);
 		// if the popup is not raised, then, go raising, else, the popup just

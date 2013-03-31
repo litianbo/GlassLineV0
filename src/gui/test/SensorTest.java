@@ -172,8 +172,7 @@ public class SensorTest extends TestCase {
 		assertEquals(
 				"0 message should have been sent to the popup. Event log: "
 						+ popup.log.toString(), 0, popup.log.size());
-		// now, test if the sensor respond correctly when the conveyor has too
-		// much glass on it
+		
 		// suppose popup give it a new glass glass2
 		frontSensor.msgHereIsGlass(popup, glass2);
 		// now, run scheduler to send glass to conveyor

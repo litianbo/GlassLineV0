@@ -59,7 +59,7 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	}
 
 	/**
-	 * sent from front end sensor
+	 * sent from front front sensor
 	 */
 	@Override
 	public void msgCanISendGlass(Sensor sensor, Glass glass) {
@@ -75,7 +75,7 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	}
 
 	/**
-	 * sent from front end sensor
+	 * sent from front front sensor
 	 */
 	@Override
 	public void msgHereIsGlass(Sensor sensr, Glass glass) {
@@ -224,7 +224,7 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	}
 
 	public void glassArrived(Glass glass) {
-		print("TEST");
+		
 		if (name == "Conveyor1") {
 			cf.sensor2.msgCanISendGlass(this);
 		} else if (name == "Conveyor2") {// do nothing now.
