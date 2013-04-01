@@ -11,7 +11,7 @@ import interfaces.Sensor;
 
 public class ConveyorAgent extends Agent implements Conveyor {
 	private enum ConveyorState {
-		STOPED, GLASS_ARRIVED, WAITING_FOR_SENSOR, SENDING_GLASS_TO_SENSOR, FRONT_SENSOR_CAN_SEND_GLASS, NULL
+		STOPED, GLASS_ARRIVED, WAITING_FOR_SENSOR, BACK_SENSOR_CAN_SEND_GLASS, SENDING_GLASS_TO_SENSOR, FRONT_SENSOR_CAN_SEND_GLASS, NULL
 	}
 
 	List<Glass> glasses = Collections.synchronizedList(new ArrayList<Glass>());
@@ -21,6 +21,7 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	ConveyorFamily cf;
 	boolean backSensorOccupied = false;
 	boolean stopConveyor = false;
+	boolean running = false;
 
 	/**
 	 * constructor for conveyor agent
@@ -38,14 +39,19 @@ public class ConveyorAgent extends Agent implements Conveyor {
 
 	// messages:
 	public void msgStart() {
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
 		print("conveyor started!");
-		if (glasses.size() > 0 || waitingGlasses.size() > 0)
+		if (waitingGlasses.size() > 0)
 			state = ConveyorState.FRONT_SENSOR_CAN_SEND_GLASS;
+		else if (glasses.size() > 0)
+			state = ConveyorState.BACK_SENSOR_CAN_SEND_GLASS;
 		else
 			// if no glass is currently on the conveyor, don't start it until
 			// one is coming to save power
 			state = ConveyorState.NULL;
-
+		transducer.fireEvent(TChannel.CONVEYOR, TEvent.CONVEYOR_DO_START, args);
+		running = true;
 		stopConveyor = false;
 		stateChanged();
 	}
@@ -53,8 +59,14 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	/**
 	 * conveyor needs to stop
 	 */
-	public void msgStop() {// TODO: do something here
+	public void msgStop() {
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
+		transducer.fireEvent(TChannel.CONVEYOR, TEvent.CONVEYOR_DO_STOP, args);
 		state = ConveyorState.STOPED;
+
+		running = false;
+
 		stateChanged();
 	}
 
@@ -78,8 +90,8 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	 * sent from front front sensor
 	 */
 	@Override
-	public void msgHereIsGlass(Sensor sensr, Glass glass) {
-		// TODO Auto-generated method stub
+	public void msgHereIsGlass(Sensor sensor, Glass glass) {
+		print("Recieved glass from: " + sensor.getName());
 		glasses.add(glass);
 		state = ConveyorState.GLASS_ARRIVED;
 		stateChanged();
@@ -100,6 +112,7 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	 */
 	@Override
 	public void msgIAmEmpty() {
+
 		if (glasses.size() > 0 && !backSensorOccupied)// if there is glass exist
 														// in the conveyor, send
 			// it to the back end sensor
@@ -146,12 +159,23 @@ public class ConveyorAgent extends Agent implements Conveyor {
 			}
 			if (state == ConveyorState.WAITING_FOR_SENSOR
 					&& waitingGlasses.size() > 0 && !backSensorOccupied) {
+
 				pushGlassToSensor(waitingGlasses.remove(0));
 				notifySensorToSendGlass();
 				return true;
 			}
 			if (state == ConveyorState.FRONT_SENSOR_CAN_SEND_GLASS) {
+				// print("TEST");
+
 				notifySensorToSendGlass();
+				
+				return true;
+			}
+			if(state == ConveyorState.BACK_SENSOR_CAN_SEND_GLASS){
+				if (glasses.size() > 0) {
+					
+					pushGlassToSensor(glasses.remove(0));
+				}
 				return true;
 			}
 			if (state == ConveyorState.SENDING_GLASS_TO_SENSOR) {
@@ -174,10 +198,10 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	// methods:
 	public void sendGlassToSensor() {
 		print("Pushing glass to back end sensor");
-		
+
 		cf.sensor2.msgHereIsGlass(this, glasses.remove(0));
-		if (waitingGlasses.size() > 0)
-			state = ConveyorState.WAITING_FOR_SENSOR;
+		if (glasses.size() > 0)
+			state = ConveyorState.GLASS_ARRIVED;
 		else
 			state = ConveyorState.NULL;
 		stateChanged();
@@ -186,8 +210,12 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	public void notifySensorToSendGlass() {
 		Object[] args = new Object[1];
 		args[0] = new Long(0);
-		
-		transducer.fireEvent(TChannel.CONVEYOR, TEvent.CONVEYOR_DO_START, args);
+		if (!running) {
+			transducer.fireEvent(TChannel.CONVEYOR, TEvent.CONVEYOR_DO_START,
+					args);
+			running = true;
+		}
+
 		state = ConveyorState.NULL;
 		cf.sensor1.msgIAmEmpty(this);
 		stateChanged();
@@ -197,7 +225,8 @@ public class ConveyorAgent extends Agent implements Conveyor {
 		print("Pushing glass to back end sensor");
 		Object[] args = new Object[1];
 		args[0] = new Long(0);
-		transducer.fireEvent(TChannel.CONVEYOR, TEvent.CONVEYOR_DO_START, args);
+		// transducer.fireEvent(TChannel.CONVEYOR, TEvent.CONVEYOR_DO_START,
+		// args);
 		cf.sensor2.msgHereIsGlass(this, glass);
 		stateChanged();
 	}
@@ -224,12 +253,9 @@ public class ConveyorAgent extends Agent implements Conveyor {
 	}
 
 	public void glassArrived(Glass glass) {
-		
-		if (name == "Conveyor1") {
-			cf.sensor2.msgCanISendGlass(this);
-		} else if (name == "Conveyor2") {// do nothing now.
-			cf.sensor2.msgCanISendGlass(this);
-		}
+
+		cf.sensor2.msgCanISendGlass(this);
+
 		stateChanged();
 	}
 

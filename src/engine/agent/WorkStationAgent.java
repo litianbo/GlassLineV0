@@ -76,11 +76,7 @@ public class WorkStationAgent extends Agent implements WorkStation {
 		}
 		if (channel == TChannel.WASHER
 				&& event == TEvent.WORKSTATION_RELEASE_GLASS) {
-			timer.schedule(new TimerTask() {
-				public void run() {
-					
-				}
-			}, 200);
+
 			transducer.fireEvent(TChannel.WASHER,
 					TEvent.WORKSTATION_RELEASE_FINISHED, args);
 		}
@@ -94,10 +90,20 @@ public class WorkStationAgent extends Agent implements WorkStation {
 		transducer.fireEvent(TChannel.POPUP,
 				TEvent.WORKSTATION_GUI_ACTION_FINISHED, args);
 		if (name.contains("Top")) {// top workstation
-
+			
 		}
+		/*
+		 * timer.schedule(new TimerTask() { public void run() {
+		 * 
+		 * } }, 10);
+		 */
+		popup.msgGlassDone(this, glass);
+		print("" + name);
+		glass = null;
+		stateChanged();
 	}
-	public String getName(){
+
+	public String getName() {
 		return name;
 	}
 }

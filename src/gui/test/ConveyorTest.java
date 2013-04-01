@@ -202,12 +202,6 @@ public class ConveyorTest extends TestCase {
 		assertEquals(
 				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
 						+ sensor1.log.toString(), 0, sensor1.log.size());
-		// transducer fires event one more time here, because there is a chance
-		// the conveyor stop running in some scenario
-		assertTrue(
-				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
-						+ animation.log.toString(),
-				animation.log.containsString("CONVEYOR_DO_START"));
 
 		animation.log.clear();
 		sensor1.log.clear();
@@ -325,7 +319,7 @@ public class ConveyorTest extends TestCase {
 		// run scheduler
 		conveyor.pickAndExecuteAnAction();
 		// now, front sensor should receive msgIAmOccupied() for a
-		// simplification of msgIAmStoped(), these two have the same functin,
+		// simplification of msgIAmStoped(), these two have the same function,
 		// but different names
 		assertTrue(
 				"Mock sensor should have received the msg after the pickAndExecuteAnAction. Event log: "
@@ -406,6 +400,8 @@ public class ConveyorTest extends TestCase {
 				"Message should be sent from " + conveyor.toString(),
 				sensor1.log.getLastLoggedEvent().getMessage()
 						.contains(conveyor.getName()));
+		// there was glass stand in the conveyor before stopping the conveyor,
+		// after it starts again, send those glass to sensor
 		assertEquals(
 				"Mock sensor should have an empty event log now. Instead, the mock sensor event log reads: "
 						+ sensor2.log.toString(), 0, sensor2.log.size());

@@ -48,6 +48,9 @@ public class ConveyorFamily implements ConveyorFamilyInterface{
 		
 		
 	}
+	public void msgCanISendGlass(){
+		sensor1.msgCanISendGlass();
+	}
 	@Override
 	public void msgStartConveyor() {
 		conveyor1.msgStart();

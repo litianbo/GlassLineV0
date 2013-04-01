@@ -55,6 +55,7 @@ public class SensorAgent extends Agent implements Sensor {
 	 */
 	public void msgCanISendGlass(Conveyor conveyor) {
 		print("State: " + state);
+		
 		if (state == SensorState.EMPTY
 				|| state == SensorState.EMPTY_AND_SO_DOES_POPUP
 				|| state == SensorState.EMPTY_BUT_POPUP_IS_NOT_EMPTY)
@@ -63,8 +64,10 @@ public class SensorAgent extends Agent implements Sensor {
 				|| state == SensorState.OCCUPIED
 				|| state == SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED) {
 			state = SensorState.STOP_CONVEYOR;
+			//print("TEST1111");
 		}
 		stateChanged();
+		
 	}
 
 	/**
@@ -93,8 +96,7 @@ public class SensorAgent extends Agent implements Sensor {
 	 * can pass glass to popup
 	 */
 	public void msgIAmEmpty() {
-		Object[] args = new Object[1];
-		args[0] = new Long(0);
+		
 		if (state == SensorState.OCCUPIED
 				|| state == SensorState.OCCUPIED_AND_SO_DOES_POPUP
 				|| state == SensorState.OCCUPIED_BUT_POPUP_IS_NOT_OCCUPIED) {
@@ -103,7 +105,7 @@ public class SensorAgent extends Agent implements Sensor {
 
 		} else
 			state = SensorState.EMPTY_AND_SO_DOES_POPUP;
-		transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_RELEASED, args);
+		
 		stateChanged();
 	}
 
@@ -112,13 +114,14 @@ public class SensorAgent extends Agent implements Sensor {
 	 */
 	@Override
 	public void msgHereIsGlass(Popup popup, Glass glass) {
-
+		print("Reiceved glass from: " + popup.getName());
 		Object[] args = new Object[1];
 		args[0] = new Long(0);
 		glasses.add(glass);
 		state = SensorState.OCCUPIED;
 		stateChanged();
 		transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_PRESSED, args);
+		stateChanged();
 	}
 
 	/**
@@ -222,6 +225,15 @@ public class SensorAgent extends Agent implements Sensor {
 			tellConveyorToStop();
 			return true;
 		}
+		if(state == SensorState.EMPTY && pcfIsWaiting){
+			
+			notifyPopupToSend();
+			return true;
+		}
+		if(state == SensorState.EMPTY && stopConveyor){
+			activeConveyor();
+			return true;
+		}
 		return false;
 	}
 
@@ -268,7 +280,7 @@ public class SensorAgent extends Agent implements Sensor {
 		print("Conveyor needs to stop!");
 		cf.conveyor1.msgStop();
 		stopConveyor = true;
-		state = SensorState.OCCUPIED_AND_SO_DOES_POPUP;// switch it back to full
+		state = SensorState.OCCUPIED;// switch it back to full
 														// occupied state
 		stateChanged();
 	}
@@ -282,15 +294,21 @@ public class SensorAgent extends Agent implements Sensor {
 	public void sendGlassToConveyor() {
 		Object[] args = new Object[1];
 		args[0] = new Long(0);
-		cf.conveyor1.msgHereIsGlass(this, glasses.remove(0));
 		transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_RELEASED, args);
+		cf.conveyor1.msgHereIsGlass(this, glasses.remove(0));
+		
 		state = SensorState.EMPTY;
 		stateChanged();
 	}
 
 	public void passGlassToPopup() {
+		print("sending glass to popup");
+		
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
 		cf.popup.msgHereIsGlass(this, glasses.remove(0));
 		state = SensorState.EMPTY;
+		transducer.fireEvent(TChannel.SENSOR, TEvent.SENSOR_GUI_RELEASED, args);
 		stateChanged();
 	}
 

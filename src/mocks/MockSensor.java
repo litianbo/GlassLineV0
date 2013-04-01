@@ -23,7 +23,7 @@ public class MockSensor implements Sensor, TReceiver {
 		this.name = name;
 		// TODO Auto-generated constructor stub
 		this.t = t;
-		t.register(this, TChannel.SENSOR);
+		//t.register(this, TChannel.SENSOR);
 		this.cf = cf;
 	}
 
@@ -31,7 +31,7 @@ public class MockSensor implements Sensor, TReceiver {
 			ConveyorFamily pcf) {
 		this.name = name;
 		this.t = t;
-		t.register(this, TChannel.SENSOR);
+		//t.register(this, TChannel.SENSOR);
 		this.cf = cf;
 		this.pcf = pcf;
 	}

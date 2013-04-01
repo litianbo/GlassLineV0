@@ -90,9 +90,7 @@ public class PopupAgent extends Agent implements Popup {
 	 */
 	@Override
 	public void msgGlassDone(WorkStation work, Glass glass) {
-		for(int i = 0; i < glasses.size(); i ++){
-			print(glasses.get(i).getName());
-		}
+
 		if (work.getName() == "Top"
 				&& wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED) {
 			wState = WorkStationState.BOT_WORKSTATION_OCCUPIED;
@@ -110,10 +108,16 @@ public class PopupAgent extends Agent implements Popup {
 		}
 		print("After release the glass, workstation state is: " + wState
 				+ " workstation name: " + work.getName());
-		
+		if (!raise) {
+			raise = true;
+			Object[] args = new Object[1];
+			args[0] = new Long(0);
+			transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_DO_MOVE_UP, args);
+		}
+		// print("TEST");
 		doneGlasses.add(glass);
 		glasses.remove(0);
-		
+
 		stateChanged();
 
 	}
@@ -162,11 +166,17 @@ public class PopupAgent extends Agent implements Popup {
 	@Override
 	public void msgHereIsGlass(Sensor sensor, Glass glass) {
 		// TODO Auto-generated method stub
+		Object[] args = new Object[1];
+		args[0] = new Long(0);
 		glasses.add(glass);
 		print("received message from " + sensor.getName() + " to work on "
 				+ glass.getName());
 		popupState = PopupState.GLASS_ARRIVED;
-		stateChanged();
+		if (raise && wState != WorkStationState.BOTH_WORKSTATION_OCCUPIED
+				|| raise && !glass.recipe.needWashing
+				&& wState == WorkStationState.BOTH_WORKSTATION_OCCUPIED)
+			transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_DO_MOVE_DOWN, args);
+			stateChanged();
 	}
 
 	// scheduler:
@@ -318,10 +328,11 @@ public class PopupAgent extends Agent implements Popup {
 		Object[] args = new Object[1];
 		args[0] = new Long(0);
 		popupState = PopupState.SENDING_GLASS_TO_SENSOR;
-		if (raise)
+		if (raise) {
 			transducer.fireEvent(TChannel.POPUP, TEvent.POPUP_DO_MOVE_DOWN,
 					args);
-
+			raise = false;
+		}
 		stateChanged();
 	}
 
